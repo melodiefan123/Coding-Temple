@@ -1,0 +1,33 @@
+===========================
+STUDENT GRADE REPORT
+===========================
+Total students: 16
+Class average: 79.8
+Highest average: 95.2
+Lowest average: 58.2
+
+Grade Distribution:
+  A: 3
+  B: 5
+  C: 5
+  D: 2
+  F: 1
+  N/A: 0
+
+Individual Results:
+  Alice Johnson        Avg: 91.5 Grade: A
+  Bob Smith            Avg: 79.7 Grade: C
+  Charlie Brown        Avg: 86.5 Grade: B
+  Diana Prince         Avg: 70.0 Grade: C
+  Eve Williams         Avg: 95.2 Grade: A
+  Frank Miller         Avg: 70.0 Grade: C
+  Grace Lee            Avg: 86.8 Grade: B
+  Henry Davis          Avg: 78.7 Grade: C
+  Iris Wilson          Avg: 62.0 Grade: D
+  Jack Taylor          Avg: 89.0 Grade: B
+  Kate Anderson        Avg: 76.5 Grade: C
+  Liam Martinez        Avg: 84.8 Grade: B
+  Mia Thompson         Avg: 58.2 Grade: F
+  Noah Garcia          Avg: 93.0 Grade: A
+  Olivia White         Avg: 69.5 Grade: D
+  Test                 Avg: 85.0 Grade: B
