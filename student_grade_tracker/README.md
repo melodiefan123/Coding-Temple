@@ -1,6 +1,6 @@
 #Student Grade Tracker
 
-A simple Python project that reads csvs and generates student grade reports. 
+A simple Python project that reads csv and generates student grade reports. 
 
 ##Setup
 

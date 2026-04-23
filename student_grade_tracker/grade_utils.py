@@ -133,3 +133,45 @@ def get_letter_grade(average: float | None) -> str:
         return "F"
 
 
+# # ============================================================
+# # FUNCTION 4: Add Students With Validation
+# # ============================================================
+
+def add_student(students: list[dict]) -> list[dict]:
+    """
+    Prompt the user to enter a new student's name and grades, then add that student to the list.
+
+    The function should:
+        1. Ask for the student's name.
+        2. For each subject (math, science, english, history), ask for a grade.
+           - If the user enters an empty string, treat it as missing (None).
+           - If the user enters a non-numeric value, show an error and ask again.
+        3. Create a student dict and append it to the students list.
+
+    Args:
+        students: The list of student dicts to which the new student will be added. 
+    """
+    user_prompt = input("Would you like to add a new student? (yes/no): ").strip().lower()
+    if user_prompt == 'yes' or user_prompt == 'y':
+        student_name = input("Enter the student's name: ").strip()
+        subjects = ['math', 'science', 'english', 'history']
+        new_student = {"student_name": student_name}
+        for subject in subjects:
+            while True:
+                try:
+                    grade_input = input(f"Enter {student_name}'s grade (percentage) for {subject} (or leave blank if missing): ").strip()
+                    grade_input = int(grade_input) if grade_input else None
+                    if grade_input is None:
+                        new_student[subject] = None
+                        break
+                    if grade_input >= 0 and grade_input <= 100:
+                        new_student[subject] = grade_input
+                        break
+                    else: 
+                        print("Grade must be between 0 and 100. Please try again.")
+                except ValueError:
+                    print("Invalid input. Please enter a numeric grade or leave blank.")
+        students.append(new_student)
+    else: 
+        print("No new student added.")
+    return students

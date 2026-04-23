@@ -1,4 +1,4 @@
-from grade_utils import load_students, calculate_average, get_letter_grade
+from grade_utils import load_students, calculate_average, get_letter_grade, add_student
 
 # # ============================================================
 # # FUNCTION 4: Generate summary report
@@ -28,6 +28,7 @@ def generate_report(students: list[dict]) -> dict:
 #     #   4. Build the student summary dict
 #     # Then compute class-level stats from all the averages.
 #     pass
+    students = add_student(students)
     total_students = len(students)
     grade_distribution = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0, "N/A": 0}
     student_summaries = []
