@@ -59,6 +59,3 @@ print("Data written to product_summary.csv")
 
 
 
-
-
-
