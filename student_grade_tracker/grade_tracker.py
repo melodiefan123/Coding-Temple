@@ -40,11 +40,10 @@ def load_students(filepath: str) -> list[dict]:
     #       return a list of dicts.
     #       Hint: use "with open(filepath) as f:" and a list comprehension
     #       or a for loop to collect rows.
-    
+    students = []
     try:
         with open(filepath, 'r') as file:
             reader = csv.DictReader(file)
-            students = []
             for row in reader: 
                 row['math'] = int(row['math']) if row['math'] else None
                 row['science'] = int(row['science']) if row['science'] else None
@@ -166,6 +165,15 @@ def generate_report(students: list[dict]) -> dict:
     grade_distribution = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0, "N/A": 0}
     student_summaries = []
     all_averages = []
+    if not students:
+        return {
+            "total_students": 0,
+            "class_average": None,
+            "highest_average": None,
+            "lowest_average": None,
+            "grade_distribution": {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0, "N/A": 0},
+            "students": []
+        }
     for student in students: 
         grades = [student['math'], student['science'], student['english'], student['history']]
         average = calculate_average(grades)
@@ -181,7 +189,14 @@ def generate_report(students: list[dict]) -> dict:
             all_averages.append(average)
 
     if not all_averages: 
-        return None
+         return {
+        "total_students": total_students,
+        "class_average": None,
+        "highest_average": None,
+        "lowest_average": None,
+        "grade_distribution": grade_distribution,
+        "students": student_summaries
+        }
     highest_average = float(max(all_averages))
     lowest_average = float(min(all_averages))
     class_average = round(sum(all_averages) / len(all_averages), 1)
