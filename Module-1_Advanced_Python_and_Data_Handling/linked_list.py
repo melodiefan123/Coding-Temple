@@ -123,3 +123,23 @@ print(is_balanced("({[]})"))       # True
 print(is_balanced("(]"))           # False
 print(is_balanced("([)]"))         # False
 print(is_balanced("hello (world)")) # True
+
+
+#Task Processor
+from collections import deque
+
+
+
+class TaskProcessor: 
+    def __init__(self):
+        self.tasks = deque()  # Use a deque for efficient pops from the left
+
+    def add_task(self, task):
+        """Add a new task to the stack."""
+        self.tasks.append(task)
+
+    def process_next(self):
+        """Process the most recently added task. Returns the task or None if no tasks."""
+        if not self.tasks:
+            return None  # No tasks to process
+        return self.tasks.popleft()  # Remove and return the last task added
