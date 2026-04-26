@@ -26,7 +26,7 @@ def running_sum(numbers):
 #Approach 1: Load all emails into a set (fast, more memory)
 # Time: O(n) - single pass through all rows
 # Space: O(n) - seen and duplicates sets grow with input size
-def find_duplicates_fast(csv):
+def find_duplicates_set(csv):
    seen = set()
    duplicates = set()
    for row in csv: 
@@ -38,8 +38,12 @@ def find_duplicates_fast(csv):
    return duplicates
 
 #Approach 2: Sort the file and scan for adjacent duplicates (slower, less memory)
-
-def find_duplicates_slower(csv): 
+# Time: O(n log n) - sorting dominates
+# Space: O(n) - stores sorted copy of all emails
+def find_duplicates_sort(emails): 
    duplicates = set()
-   sorted_csv = sorted(csv, key=lambda x: x['email']) 
-   
+   sorted_emails = sorted(emails) 
+   for i in range(1, len(sorted_emails)): 
+      if sorted_emails[i] == sorted_emails[i-1]: 
+         duplicates.add(sorted_emails[i])
+   return duplicates
