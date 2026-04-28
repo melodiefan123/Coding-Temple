@@ -29,3 +29,13 @@ total_value_in_stock = sum(p['price'] for p in products if p['in_stock'])
 
 # Group products by category, return a dictionary like {"electronics": [...], "books": [...], ...} Do not use for loops with append. Use comprehensions or functional tools only. Do not modify the original products list.
 category_groups = {category: [p for p in products if p['category'] == category] for category in set(p['category'] for p in products)}
+
+
+print("\n" + "=" * 60)
+print("Task 6 — Products grouped by category (dict comprehension)")
+print("=" * 60)
+for cat, items in category_groups.items():
+    names = ", ".join(p["name"] for p in items)
+    print(f"  {cat:<12}: {names}")
+
+print("\nOriginal products list unchanged:", len(products), "items")
