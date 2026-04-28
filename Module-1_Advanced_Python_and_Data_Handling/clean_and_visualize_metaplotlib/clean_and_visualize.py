@@ -12,3 +12,7 @@ messy = pd.DataFrame({
                "West", "east", "North", "South", "West"],
 })
 
+# Clean it: Standardize names/regions, convert types, handle missing/invalid values, remove duplicates
+
+# Analyze and visualize: Total sales by product (bar), daily trend (line), distribution (histogram)
+# Save visualizations to a PNG file
