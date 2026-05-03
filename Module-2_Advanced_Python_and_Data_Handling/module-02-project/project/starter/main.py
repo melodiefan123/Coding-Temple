@@ -19,13 +19,22 @@ def main():
     print("=" * 60)
 
     # TODO: uncomment these lines once pipeline.py is implemented
-    # pipeline = DataPipeline(DATA_PATH)
-    # results = pipeline.run()
+    pipeline = DataPipeline(DATA_PATH)
+    results = pipeline.run()
+
+    print("\\n=== Analysis Results ===")
+    if results: 
+        for key, value in results.items():
+            print(f"{key}: {value}")
+        print(f"  Top location by headcount: {results['headcount_by_location'].idxmax()}")
+    else: 
+        print("Pipeline failed - no results to display.")
 
     # TODO: print a short summary using the results dict, e.g.:
-    # print(f"  Top location by headcount: {results['headcount_by_location'].idxmax()}")
+    
 
-    print("Pipeline not yet implemented — fill in pipeline.py to continue.")
+
+    # print("Pipeline not yet implemented — fill in pipeline.py to continue.")
 
 
 if __name__ == "__main__":

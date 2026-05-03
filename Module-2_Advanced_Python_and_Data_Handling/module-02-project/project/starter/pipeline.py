@@ -5,6 +5,8 @@ The docstrings describe exactly what each method should do.
 """
 
 import pandas as pd
+import re, os
+import matplotlib.pyplot as plt
 
 
 class DataPipeline:
@@ -55,7 +57,31 @@ class DataPipeline:
             filepath: path to the messy CSV file
         """
         # TODO: implement __init__
-        pass
+        try:
+            self.df = pd.read_csv(filepath)
+            print(f"Loaded {self.df.shape[0]} rows and {self.df.shape[1]} columns.")
+        except FileNotFoundError:
+            print("File not found.")
+
+
+    def _parse_salary(self, val): 
+        pattern = re.sub(r"[$,]", "", str(val))
+        try:
+            if not float(pattern) or float(pattern) < 0: 
+                return None
+            else: 
+                return float(pattern)
+        except ValueError: 
+            return None
+        
+    def _parse_date(self, val):
+        formats = ["%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y"]
+        for format in formats: 
+            try: 
+                return pd.to_datetime(val, format = format)
+            except:
+                pass
+        return None
 
     def clean(self):
         """Clean the DataFrame stored in self.df and print a summary.
@@ -91,7 +117,21 @@ class DataPipeline:
         Returns self so calls can be chained: pipeline.clean().analyze()
         """
         # TODO: implement clean()
-        pass
+        self.df = self.df.drop_duplicates(subset=["employee_id"], keep="first")
+        self.df["name"] = self.df["name"].str.strip().str.title()
+        self.df["department"] = self.df["department"].str.strip().str.lower().map(self.DEPT_MAP)
+        self.df["office_location"] = self.df["office_location"].str.strip().str.lower().map(self.LOC_MAP)
+        self.df["salary"] = self.df["salary"].apply(self._parse_salary)
+        self.df["years_experience"] = pd.to_numeric(self.df["years_experience"], errors="coerce")
+        self.df["years_experience"] = self.df["years_experience"].where(self.df["years_experience"] <= 50, other=None)
+        self.df["satisfaction_score"] = pd.to_numeric(self.df["satisfaction_score"], errors="coerce")
+        self.df["satisfaction_score"] = self.df["satisfaction_score"].where((self.df["satisfaction_score"] >= 1) & (self.df["satisfaction_score"] <= 10), other=None)
+        self.df["survey_date"] = self.df["survey_date"].apply(self._parse_date)
+        print(f"Cleaning complete. Total missing values: {sum(self.df.isnull().sum())}")
+        return self
+
+
+
 
     def analyze(self):
         """Compute summary statistics from the cleaned self.df.
@@ -116,7 +156,19 @@ class DataPipeline:
                      "avg_satisfaction_by_location"
         """
         # TODO: implement analyze()
-        pass
+        avg_salary_by_dept = self.df.groupby("department")["salary"].mean().round(0)
+        avg_satisfaction_by_dept = self.df.groupby("department")["satisfaction_score"].mean().round(0)
+        headcount_by_location = self.df["office_location"].value_counts()
+        avg_satisfaction_by_location = self.df.groupby("office_location")["satisfaction_score"].mean().round(0)
+        clean_df = self.df[["years_experience", "salary"]].dropna()
+        experience_salary_correlation = clean_df["years_experience"].corr(clean_df["salary"])
+        return {
+            "avg_salary_by_dept": avg_salary_by_dept,
+            "avg_satisfaction_by_dept": avg_satisfaction_by_dept,
+            "headcount_by_location": headcount_by_location, 
+            "experience_salary_correlation": experience_salary_correlation,
+            "avg_satisfaction_by_location": avg_satisfaction_by_location}
+        
 
     def visualize(self, output_path="output/charts.png"):
         """Create and save visualizations to `output_path`.
@@ -138,7 +190,29 @@ class DataPipeline:
             output_path: where to save the PNG file
         """
         # TODO: implement visualize()
-        pass
+        try: 
+            fig, (ax1, ax2) = plt.subplots(1,2, figsize = (15,5))
+
+            avg_salary = self.df.groupby("department")["salary"].mean()
+            satisfaction_score = self.df["satisfaction_score"]
+            #bar
+            ax1.bar(avg_salary.index, avg_salary.values)
+            ax1.set_title("Average Salary by Department")
+            ax1.set_xlabel("Average Salary")
+            ax1.set_ylabel("Departments")
+
+            #Histogram 
+            ax2.hist(satisfaction_score, bins = 10 )
+            ax2.set_title("Satisfaction Score Distribution")
+            ax2.set_xlabel("Satisfaction Score")
+            ax2.set_ylabel("Distribution(1-10)")
+
+            plt.tight_layout()
+            plt.savefig(output_path, dpi=150)
+            plt.close()
+        except FileNotFoundError:
+            return None
+        
 
     def export(self, output_path="output/clean_employees.csv"):
         """Save the cleaned self.df to a CSV at `output_path`.
@@ -152,7 +226,11 @@ class DataPipeline:
             output_path: path for the exported CSV
         """
         # TODO: implement export()
-        pass
+        try:
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            self.df.to_csv(output_path, index=False)
+        except FileNotFoundError:
+            return None
 
     def run(self):
         """Execute the full pipeline: clean → analyze → visualize → export.
@@ -161,4 +239,12 @@ class DataPipeline:
         Return the results dict from analyze().
         """
         # TODO: call each method in order and return results
-        pass
+        try: 
+
+            self.clean()
+            data_analysis = self.analyze()
+            self.visualize(os.path.join(os.path.dirname(__file__), "output", "chart.png"))
+            self.export(os.path.join(os.path.dirname(__file__), "output", "clean_data.csv"))
+            return data_analysis
+        except FileNotFoundError:
+            return None
