@@ -202,7 +202,7 @@ class DataPipeline:
             ax1.set_ylabel("Departments")
 
             #Histogram 
-            ax2.hist(satisfaction_score, bins = 10 )
+            ax2.hist(satisfaction_score.dropna(), bins = list(range(1,11)))
             ax2.set_title("Satisfaction Score Distribution")
             ax2.set_xlabel("Satisfaction Score")
             ax2.set_ylabel("Distribution(1-10)")
@@ -240,7 +240,6 @@ class DataPipeline:
         """
         # TODO: call each method in order and return results
         try: 
-
             self.clean()
             data_analysis = self.analyze()
             self.visualize(os.path.join(os.path.dirname(__file__), "output", "chart.png"))
