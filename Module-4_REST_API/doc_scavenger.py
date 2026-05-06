@@ -7,9 +7,9 @@ responses = requests.get("https://api.github.com/users/google/repos", params={"s
 data = responses.json()
 for repo in data:
     print(f"Name: {repo['name']}")
-    print(f"Description: {repo['description'] or "No description provided."}")
+    print(f"Description: {repo['description'] or 'No description provided.'}")
     print(f"Stars: {repo['stargazers_count']}")
-    print(f"Language: {repo['language'] or "Not specified"}")
+    print(f"Language: {repo['language'] or 'Not specified'}")
     print("-" * 40)
 
 print(f"Remaining rate limit: {responses.headers.get('X-RateLimit-Remaining')}")
