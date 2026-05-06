@@ -10,12 +10,17 @@
 # The total number of response headers
 # Make a POST request to https://httpbin.org/post with a JSON body and custom headers (X-Student-Name set to your name). Print the response, httpbin.org echoes back everything you sent, so you can verify your headers were received.
 import requests
+import json
 
-responses = [
-    requests.get("https://jsonplaceholder.typicode.com/posts/1"), requests.get("https://jsonplaceholder.typicode.com/users/1"), requests.get("https://httpbin.org/get"),
-    ]
-for response in responses:
+urls = [
+    "https://jsonplaceholder.typicode.com/posts/1",
+    "https://jsonplaceholder.typicode.com/users/1",
+    "https://httpbin.org/get"
+]
+
+def display(method, response):
     print("="*50)
+    print(f"{method} {response.url}")
     print(f"Content-Type: {response.headers.get('Content-Type', 'Not specified')}")
     print(f"Content-Length: {response.headers.get('Content-Length', 'Not specified')}")
     cache_headers = [key for key in response.headers if "cache" in key.lower()]
@@ -24,11 +29,9 @@ for response in responses:
     print(f"Rate-Limiting Headers: {', '.join(rate_limit_headers) if rate_limit_headers else 'None'}")
     print(f"Total Response Headers: {len(response.headers)}")
 
-print("="*50)
+for url in urls:
+    response = requests.get(url)
+    display("GET", response)
+
 post_response = requests.post("https://httpbin.org/post", json={"message": "Hello, httpbin!"}, headers={"X-Student-Name": "Melodie"})
-print(f"POST https://httpbin.org/post")
-print("\nResponse Body")
-print(post_response.json())
-print("POST Request Headers:")
-for key,value in post_response.request.headers.items(): 
-    print(f"{key}: {value}")
+display("POST", post_response)
