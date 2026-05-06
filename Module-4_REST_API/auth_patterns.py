@@ -1,0 +1,3 @@
+# Making an unauthenticated request to https://api.github.com/user and printing the status code (you should get 401)
+# Making an unauthenticated request to https://api.github.com/users/octocat and printing the status code (this public endpoint should return 200)
+# A function called create_auth_headers() that takes an API key and an auth type ("bearer" or "api-key") and returns the correct headers dictionary

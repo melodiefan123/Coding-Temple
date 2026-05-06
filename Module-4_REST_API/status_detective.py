@@ -9,31 +9,6 @@
 import requests
 from urllib.parse import urlparse
 
-response = requests.get("https://jsonplaceholder.typicode.com/posts/1")
-print(f"GET /posts/1 \n  Status: {response.status_code} (Success)\n  Description: {response.reason}")
-
-response = requests.get("https://jsonplaceholder.typicode.com/posts/99999")
-print(f"GET /posts/99999 \n  Status: {response.status_code}\n  Description: {response.reason}")
-
-new_post = {
-    "title": "new_post"
-}
-response = requests.post("https://jsonplaceholder.typicode.com/posts", json=new_post)
-print(f"POST /posts \n  Status: {response.status_code}\n  Description: {response.reason}")
-
-response = requests.delete("https://jsonplaceholder.typicode.com/posts/1")
-print(f"DELETE /posts/1 \n  Status: {response.status_code}\n  Description: {response.reason}")
-
-response = requests.get("https://jsonplaceholder.typicode.com/invalidendpoint")
-print(f"GET /invalidendpoint \n  Status: {response.status_code}\n  Description: {response.reason}")
-
-response = requests.get("https://jsonplaceholder.typicode.com/users/1/todos")
-print(f"GET /users/1/todos \n  Status: {response.status_code}\n  Description: {response.reason}")
-
-
-
-
-
 # For each request, your output should look like:
 
 # GET /posts/1
@@ -45,17 +20,45 @@ def status_detective(method, url, data = None):
     path = urlparse(url).path
     method = method.upper()
     if method == "GET": 
-        response = requests.get(url=url)
+        response = requests.get(url)
     elif method == "POST": 
-        response = requests.post(url=url, json=data)
+        response = requests.post(url, json=data)
     elif method == "DELETE":
-        response = requests.delete(url=url)
+        response = requests.delete(url)
     else:
-        print(f"{method} {path}\n  Status: N/A\n  Description: Invalid HTTP method")
+        print(f"{method} {path}")
+        print(f" Status: N/A")
+        print(" Description: Invalid HTTP method")
         return
-    if response.status_code >= 200 and response.status_code <=299:
-        print(f"{method} {path} \n  Status: {response.status_code} Success \n Description: {response.reason} ")
-    elif response.status_code >= 400 and response.status_code <=499:
-        print(f"{method} {path} \n  Status: {response.status_code} Client Error \n  Description: {response.reason}")
-    elif response.status_code >= 500 and response.status_code <=599: 
-        print(f"{method} {path} \n  Status: {response.status_code} Server Error \n  Description: {response.reason}")
+    code = response.status_code
+    if 200 <= code < 300:
+        category = "Success"
+        if code == 201:
+            description = "Resource created successfully"
+        else:
+            description = "Request succeeded — resource returned"
+    elif 400 <= code < 500:
+        category = "Client Error"
+        if code == 404: 
+            description = "Resource not found or endpoint does not exist"
+        else: 
+            description = "Client error occurred"
+    elif 500 <= code < 600: 
+        category = "Server Error"
+        description = "Server encountered an error"
+    else:
+        category = "Unknown"
+        description = "Unexpected status code"
+
+    print(f"{method} {path}")
+    print(f" Status: {code} ({category})")
+    print(f" Description: {description}")
+
+base = "https://jsonplaceholder.typicode.com"
+
+status_detective("GET", f"{base}/posts/1")
+status_detective("GET", f"{base}/posts/99999")
+status_detective("POST", f"{base}/posts", {"title": "new_post"})
+status_detective("DELETE", f"{base}/posts/1")
+status_detective("GET", f"{base}/invalidendpoint")
+status_detective("GET", f"{base}/users/1/todos")
