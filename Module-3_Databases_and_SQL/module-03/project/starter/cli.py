@@ -9,7 +9,7 @@ The main menu loop is already provided — just fill in the handlers.
 from library_system import (
     init_db, add_author, add_book, add_member,
     checkout_book, return_book, find_books_by_author,
-    get_overdue_books, get_popular_genres, get_available_books, engine, Session, Author
+    get_overdue_books, get_popular_genres, get_available_books, search_books_by_title,delete_book, delete_member,list_member_borrowings, engine, Session, Author
 )
 
 
@@ -72,6 +72,26 @@ def menu_return():
         print("Please enter a valid checkout ID.")
         
 
+def menu_search_by_title():
+    """Prompt for title search string and display matching books."""
+    title_search = input("Please enter a title to search for: ")
+    results = search_books_by_title(title_search)
+    if not results: 
+        print("No books found with that title.")
+    else:
+        for result in results: 
+            print(result.title)
+
+def menu_member_borrowings():
+    """Display all books currently checked out by a member."""
+    member_id = int(input("Please enter the member ID: "))
+    results = list_member_borrowings(member_id=member_id)
+    if not results: 
+        print("No current borrowings for this member.")
+    else:
+        for result in results: 
+            print(f"Book: {result.books.title} \n Due date: {result.due_date}")
+
 
 def menu_search_by_author():
     """Prompt for author name and display matching books."""
@@ -115,9 +135,9 @@ def main():
         print("2. Register a borrower")
         print("3. Check out a book")
         print("4. Return a book")
-        print("5. Search by author")
+        print("5. Search by books")
         print("6. View overdue books")
-        print("7. View popular genres")
+        print("7. View Member's borrowings")
         print("8. Quit")
 
         choice = input("\nChoose an option (1-8): ").strip()
@@ -131,11 +151,11 @@ def main():
         elif choice == "4":
             menu_return()
         elif choice == "5":
-            menu_search_by_author()
+            menu_search_by_title()
         elif choice == "6":
             menu_overdue()
         elif choice == "7":
-            menu_popular_genres()
+            menu_member_borrowings()
         elif choice == "8":
             print("Goodbye!")
             break

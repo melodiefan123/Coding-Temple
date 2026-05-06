@@ -228,7 +228,11 @@ def list_all_books() -> list:
 def list_member_borrowings(member_id: int) -> list:
     """Return all Checkout objects for a given member_id."""
     with Session(engine) as session: 
-        return session.query(Checkout).filter(Checkout.member_id == member_id).filter(Checkout.return_date == None).all()
+        results = session.query(Checkout).filter(Checkout.member_id == member_id).filter(Checkout.return_date == None).all()
+        for result in results: 
+            _=result.books.title
+    return results
+
 
 def update_member_email(member_id: int, new_email: str):
     """Update a member's email address. Returns the updated Member object."""
@@ -244,11 +248,29 @@ def delete_book(book_id: int):
     """Delete a book from the database. Returns True if successful, False if book_id not found."""
     with Session(engine) as session: 
         book = session.query(Book).filter(Book.id == book_id).first()
-        checkouts = session.query(Checkout).filter(Checkout.book_id == book_id).all()
-        for checkout in checkouts: 
-            session.delete(checkout)
+        checkouts = session.query(Checkout).filter(Checkout.return_date == None).filter(Checkout.book_id == book_id).all()
+        all_checkouts = session.query(Checkout).filter(Checkout.book_id == book_id).all()
         if book: 
+            if checkouts: 
+                return False
+            for checkout in all_checkouts: 
+                session.delete(checkout)
             session.delete(book)
+            session.commit()
+            return True
+        else: 
+            return False
+
+def delete_member(member_id: int):
+    """Delete a member from the database. Returns True if successful, False if member_id not found."""
+    with Session(engine) as session: 
+        member = session.query(Member).filter(Member.id == member_id).first()
+        checkouts = session.query(Checkout).filter(Checkout.return_date == None).filter(Checkout.member_id == member_id).all()
+        
+        if member: 
+            if checkouts: 
+                return False
+            session.delete(member)
             session.commit()
             return True
         else: 
