@@ -58,6 +58,7 @@ class Book(Base):
     isbn: Mapped[int] = mapped_column(unique=True, nullable=False)
     published_year: Mapped[Optional[int]] = mapped_column()
     available: Mapped[bool] = mapped_column(default=True)
+    available_copies: Mapped[int] = mapped_column(default=1)
     genre: Mapped[list["Genre"]] = relationship(secondary=book_genres, back_populates="book")
     author: Mapped[list["Author"]] = relationship(secondary=book_author, back_populates="book")
     check_outs: Mapped[list["Checkout"]] = relationship(back_populates="books")
@@ -71,6 +72,7 @@ class Member(Base):
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     phone: Mapped[Optional[int]] = mapped_column()
+    membership_date: Mapped[date] = mapped_column(default=date.today())
     check_outs: Mapped[list["Checkout"]] = relationship(back_populates="members")
 
 # TODO: Implement the Checkout model
@@ -163,6 +165,10 @@ def checkout_book(book_id: int, member_id: int, days: int = 14):
             raise ValueError("Book not available")
         
         
+def search_books_by_title(title: str) -> list:
+    """Return all books whose title contains the search string (case-insensitive)."""
+    with Session(engine) as session:
+        return session.query(Book).filter(Book.title.ilike(f"%{title}%")).all()
 
 def return_book(checkout_id: int):
     """
@@ -213,3 +219,37 @@ def get_available_books() -> list:
     # TODO: implement
     with Session(engine) as session:
         return session.query(Book).filter_by(available=True).all()
+    
+def list_all_books() -> list:
+    """Return all Book objects in the database."""  
+    with Session(engine) as session: 
+        return session.query(Book).all()
+    
+def list_member_borrowings(member_id: int) -> list:
+    """Return all Checkout objects for a given member_id."""
+    with Session(engine) as session: 
+        return session.query(Checkout).filter(Checkout.member_id == member_id).filter(Checkout.return_date == None).all()
+
+def update_member_email(member_id: int, new_email: str):
+    """Update a member's email address. Returns the updated Member object."""
+    with Session(engine) as session: 
+        member = session.query(Member).filter(Member.id == member_id).first()
+        member.email = new_email
+        session.add(member)
+        session.commit()
+        session.refresh(member)
+        return member
+
+def delete_book(book_id: int):
+    """Delete a book from the database. Returns True if successful, False if book_id not found."""
+    with Session(engine) as session: 
+        book = session.query(Book).filter(Book.id == book_id).first()
+        checkouts = session.query(Checkout).filter(Checkout.book_id == book_id).all()
+        for checkout in checkouts: 
+            session.delete(checkout)
+        if book: 
+            session.delete(book)
+            session.commit()
+            return True
+        else: 
+            return False
