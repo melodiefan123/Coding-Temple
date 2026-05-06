@@ -7,7 +7,73 @@
 # GET /invalidendpoint - bad URI
 # GET /users/1/todos - nested resource
 import requests
-from urllib.parse import urlparse
+
+base_url = "https://jsonplaceholder.typicode.com"
+
+def status(method, url, **kwargs):
+    response = requests.request(method, url, **kwargs)
+    status_code = response.status_code
+
+    if 200 <= status_code < 300:
+        category = "Success"
+    elif 300<= status_code < 400:
+        category = "Redirection"
+    elif 400 <= status_code < 500:
+        category = "Client Error"
+    else:
+        category = "Server Error"
+
+    descriptions = {
+        200: "OK - The request was successful.",
+        201: "Created - The request was successful and a resource was created.",
+        204: "No Content - The request was successful but there is no content to return.",
+        400: "Bad Request - The server could not understand the request due to invalid syntax.",
+        401: "Unauthorized - Authentication is required and has failed or has not yet been provided.",
+        403: "Forbidden - The client does not have access rights to the content.",
+        404: "Not Found - The server can not find the requested resource.",
+        405: "Method Not Allowed - This method isn't supported here.",
+        422: "Unprocessable Entity - request understood but semantically invalid",
+        500: "Internal Server Error - The server has encountered a situation it doesn't know how to handle.",
+    }
+    description = descriptions.get(status_code, "No description available.")
+    return {
+        "method": method,
+        "url": url,
+        "status_code": status_code,
+        "category": category,
+        "description": description
+    }
+def print_status_report(report):
+    print(f"{report['method']} {report['url']}")
+    print(f"    Status: {report['status_code']} ({report['category']})")
+    print(f"    Description: {report['description']}")
+
+print("/n Status Code Detective\n")
+
+r = status("GET", f"{base_url}/posts/1")
+print("\n1. GET /posts/1 - existing resource")
+print_status_report(r)
+
+r = status("GET", f"{base_url}/posts/99999")
+print("\n2. GET /posts/99999 - nonexistent resource")
+print_status_report(r)
+
+r = status("POST", f"{base_url}/posts", json={"title": "foo", "body": "bar", "userId": 1})
+print("\n3. POST /posts with valid data")
+print_status_report(r)
+
+r = status("DELETE", f"{base_url}/posts/1")
+print("\n4. Delete a Resource")
+print_status_report(r)
+
+r = status("GET", f"{base_url}/invalidendpoint")
+print("5. GET ann invalid/unknown endpoint")
+print_status_report(r)
+
+r = status("GET", f"{base_url}/users/1/todos")
+print("\n6. GET nested resource")
+print_status_report(r)
+
 
 # For each request, your output should look like:
 
@@ -16,49 +82,3 @@ from urllib.parse import urlparse
 #   Description: Request succeeded — resource returned
 
 # Bonus: Add a function that takes any URL and method, makes the request, and returns a formatted status report.
-def status_detective(method, url, data = None):
-    path = urlparse(url).path
-    method = method.upper()
-    if method == "GET": 
-        response = requests.get(url)
-    elif method == "POST": 
-        response = requests.post(url, json=data)
-    elif method == "DELETE":
-        response = requests.delete(url)
-    else:
-        print(f"{method} {path}")
-        print(f" Status: N/A")
-        print(" Description: Invalid HTTP method")
-        return
-    code = response.status_code
-    if 200 <= code < 300:
-        category = "Success"
-        if code == 201:
-            description = "Resource created successfully"
-        else:
-            description = "Request succeeded — resource returned"
-    elif 400 <= code < 500:
-        category = "Client Error"
-        if code == 404: 
-            description = "Resource not found or endpoint does not exist"
-        else: 
-            description = "Client error occurred"
-    elif 500 <= code < 600: 
-        category = "Server Error"
-        description = "Server encountered an error"
-    else:
-        category = "Unknown"
-        description = "Unexpected status code"
-
-    print(f"{method} {path}")
-    print(f" Status: {code} ({category})")
-    print(f" Description: {description}")
-
-base = "https://jsonplaceholder.typicode.com"
-
-status_detective("GET", f"{base}/posts/1")
-status_detective("GET", f"{base}/posts/99999")
-status_detective("POST", f"{base}/posts", {"title": "new_post"})
-status_detective("DELETE", f"{base}/posts/1")
-status_detective("GET", f"{base}/invalidendpoint")
-status_detective("GET", f"{base}/users/1/todos")
