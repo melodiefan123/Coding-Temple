@@ -14,30 +14,72 @@ import json
     # The response body
     # The elapsed time in milliseconds
     # Format the output clearly with separators between each request.
-responses = [
-    requests.get("https://jsonplaceholder.typicode.com/users/1"), requests.post("https://jsonplaceholder.typicode.com/posts", json={"title": "Demo", "body": "Test", "userId": 1}), 
-    requests.patch("https://jsonplaceholder.typicode.com/posts/1", json={"title": "Updated Title"})]
 
-for response in responses: 
-    print("="*50)
-    print(f"Method: {response.request.method}")
-    print(f"URL: {response.request.url}")
+def separator(title):
+    print("-"*60)
+    print(f" {title} ")
+    print("-"*60)
+
+base_url = "https://jsonplaceholder.typicode.com"
+
+def display_anatomy(response, label):
+    request = response.request
+
+    print(f"\n------Request-------")
+    print(f"Method + URL: {request.method} {request.url}")
     print(f"\nRequest Headers:")
-    for key, value in response.request.headers.items(): 
+    for key, value in request.headers.items(): 
         print(f"{key}: {value}")
-    print(f"\nRequest Body:")
-    print(response.request.body or "None")
-    print(f"\nStatus Code:{response.status_code}   Reason: {response.reason}")
+    
+    body = request.body
+    if body:
+        try: 
+            parsed = json.loads(body)
+            print(f"\n Request Body (JSON):")
+            print(f"\n. {json.dumps(parsed, indent=4)}")
+        except Exception: 
+            print(f"     Request body: {body}")
+    else:
+        print(f"     Request body: None")
 
-    print(f"\nKey Response Headers:")
-    print(f"Content-Type: {response.headers.get('Content-Type')}")
-    print(f"Content-Length: {response.headers.get('Content-Length')}")
+    print(f"\n------Response-------")
+    print(f"Status Code: {response.status_code} {response.reason}")
+    print(f"Elapsed: {response.elapsed.total_seconds()*1000:.0f} ms")
+    print(f"\n Key Response Headers:")
+    for key in ["Content-Type", "Content-Length", "X-powered-by", "Cache-Control", "ETag"]:
+        val = response.headers.get(key, "Not specified")
+        print(f"      {key}: {val}")
 
-    print(f"\nResponse Body:")
-    try: 
-        print(json.dumps(response.json(), indent=2))
-    except:
-        print(response.text)
+    print(f"\n Response Body:")
+    try:
+        body_data = response.json()
+        body_str = json.dumps(body_data, indent=4)
+        if len(body_str) > 500:
+            body_str = body_str[:500] + "\n... (truncated)"
+        for line in body_str.split('\n'):
+            print(f"      {line}")
+    except Exception:
+        print(f"    {response.text[:300]}")
 
-    print(f"\nElapsed Time: {response.elapsed.total_seconds()*1000:.3f} ms")
+# ============================================================
+# REQUEST 1: GET a specific user
+# ============================================================
 
+separator("Request 1: GET /users/1")
+r = requests.get(f"{base_url}/users/1")
+display_anatomy(r, "GET User")
+
+# ============================================================
+# REQUEST 2: POST — create a new post
+# ============================================================
+
+separator("Request 2: POST /posts")
+r = requests.post(f"{base_url}/posts", json={"title": "foo", "body": "bar", "userId": 1})
+display_anatomy(r, "POST Create Post")
+
+# ============================================================
+# REQUEST 3: PATCH — partial update
+# ============================================================
+separator("Request 3: PATCH /posts/1")
+r = requests.patch(f"{base_url}/posts/1", json={"title": "Updated Title"})
+display_anatomy(r, "PATCH Update Post")
