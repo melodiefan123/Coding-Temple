@@ -12,12 +12,12 @@ body {
 }
 
 /* --- Header --- */
-header {
+ header {
     background-color: #1a1a2e;  /* Dark navy background */
     color: white;               /* White text */
     padding: 40px 20px;         /* 40px top/bottom, 20px left/right */
     text-align: center;         /* Center all text in the header */
-}
+} 
 
 header h1 {
     font-size: 2.5rem;          /* Large heading */
@@ -64,6 +64,21 @@ section h2 {
     border-bottom: 2px solid #00d4ff;  /* Blue underline */
     padding-bottom: 8px;
 }
+
+.project-grid{
+    display: flex;
+    gap:2rem;
+    flex-wrap: wrap;
+}
+
+article{
+    background-color: white;
+    padding: 2rem;
+    border-radius: 5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+}
+
 
 /* --- Footer --- */
 footer {
