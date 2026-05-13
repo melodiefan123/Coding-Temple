@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Flashcard App</title>
+        <link rel="stylesheet" href="flashcard.css">
+    </head>
+    <body>
+        <main>
+        
+            <section id="questions">
+                <h2>Flashcards</h2>
+                <div class="flashcards">
+                <article>
+                    <h4>What does HTTP stand for?</h4>
+                    <p>HyperText Transfer Protocol</p>
+                </article>
+                <article>
+                    <h4>What status code means ‘Not Found’?</h4>
+                    <p>404</p>
+                </article>
+                <article>
+                    <h4>What does CSS stand for?</h4>
+                    <p>Cascading Style Sheets</p>
+                </article>
+                <article>
+                    <h4>What does DOM stand for?</h4>
+                    <p>Document Object Model</p>
+                </article>
+                <article>
+                    <h4>What Python library do we use for HTTP requests?</h4>
+                    <p>requests</p>
+                </article>
+             </div>
+             <button onclick="showAnswer()">Show Answer</button>
+             <button onclick="nextCard()">Next</button>
+             <p class="progress"></p>
+            </section>
+        
+        </main>
+    </body>
+    <script>
+        
+        const cards = Array.from(document.querySelectorAll(".flashcards article"));
+        const progress = document.querySelector(".progress")
+        let currentIndex =0; 
+
+        function showAnswer(){
+            cards[currentIndex].classList.toggle("flipped");
+        }
+
+        function nextCard(){
+            cards[currentIndex].classList.remove("flipped");
+
+            currentIndex = (currentIndex + 1) % cards.length;
+
+            updateActive()
+            updateProgress();
+
+        }
+        function updateActive(){
+            cards.forEach((card, i) => {
+                card.classList.remove("active");
+                if ( i === currentIndex) card.classList.add("active");
+            });
+        }
+
+        function updateProgress(){
+            progress.textContent = `Card ${currentIndex + 1} of ${cards.length}`
+        }
+
+        document.addEventListener("keydown", (event) => {
+        
+             if (event.key === "ArrowRight") {
+                currentIndex = (currentIndex + 1) % cards.length;
+                updateActive();
+                updateProgress();
+            } else if (event.key === "ArrowLeft") {
+                currentIndex = (currentIndex - 1 + cards.length) % cards.length;
+                updateActive();
+                updateProgress();
+            } else if (event.key === " ") {
+                event.preventDefault();  // Prevent the spacebar from scrolling the page
+                cards[currentIndex].classList.toggle("flipped");
+         }
+});
+
+cards.forEach((card, i) => {
+    card.addEventListener("click",() => {
+        currentIndex = i; 
+        updateActive(); 
+        card.classList.toggle("flipped");
+    });
+});
+updateActive();
+updateProgress();
+    </script>
+</html>
