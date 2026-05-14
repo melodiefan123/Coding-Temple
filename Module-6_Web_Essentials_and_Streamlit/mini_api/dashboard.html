@@ -1,0 +1,138 @@
+<!-- Create a dashboard.html file that connects to the mini API and includes:
+
+Stats bar - Display total, done, and pending task counts (fetch from /stats)
+Task list - Display all tasks with their current status (fetch from /tasks)
+Add form - An input field and button that POST a new task to /tasks
+Refresh button - A button that re-fetches tasks and stats
+Last updated timestamp - Show "Last updated: [time]" that updates whenever data is fetched. Use new Date().toLocaleTimeString() to get the current time. -->
+<!DOCTYPE html>
+<html>
+    <head>
+         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Task Manager</title>
+        <style>
+            body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; }
+        .task { display: flex; justify-content: space-between; align-items: center;
+                padding: 12px; margin: 8px 0; background: #f8f8f8; border-radius: 6px; }
+        .task.done { text-decoration: line-through; opacity: 0.6; }
+        .add-form { display: flex; gap: 8px; margin: 20px 0; }
+        .add-form input { flex: 1; padding: 10px; font-size: 1rem; }
+        button { padding: 8px 16px; cursor: pointer; }
+        .error { color: #e74c3c; }
+        .stats { display: flex; gap: 20px; margin: 16px 0; }
+        .stat { background: #e8f4fd; padding: 12px 20px; border-radius: 6px; text-align: center; }
+        .stat .number { font-size: 1.5rem; font-weight: bold; color: #1a1a2e; }
+        </style>
+    </head>
+    <body>
+        <div class="stats" id="stats"></div>
+        <div id="task-list"></div>
+        <div class="add-form">
+            <input type="text" id="new-task" placeholder="Add a new task...">
+            <button id="add-btn">Add</button>
+        </div>
+        <p class="time"></p>
+        <button id="refresh-btn">Refresh</button>
+        <p id="error" class="error"></p>
+        <script>
+            const API = "http://localhost:8000"; 
+
+            const taskList = document.querySelector('#task-list')
+            const stats = document.querySelector('#stats')
+            const addBtn = document.querySelector('#add-btn')
+            const refreshBtn = document.querySelector('#refresh-btn')
+            const newTaskInput = document.querySelector('#new-task')
+            const error = document.querySelector('#error')
+            const time = document.querySelector('.time')
+            //Load stats
+            async function loadStats() {
+                try{
+                    const response = await fetch(`${API}/stats`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+
+                    stats.innerHTML=`<div class="stat"><div class="number">${data.total}</div>Total</div>
+                <div class="stat"><div class="number">${data.done}</div>Done</div>
+                <div class="stat"><div class="number">${data.pending}</div>Pending</div>`;
+
+                 timeUpdate();
+                } catch (error){
+                    stats.innerHTML=`<p class="error">Could not load stats</p>`;
+                }
+            }
+
+            async function loadTasks() {
+                try{
+                error.textContent = "";  
+                const response = await fetch(`${API}/tasks`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const tasks = await response.json();
+
+                taskList.innerHTML=tasks.map(task => `
+                <div class = "task ${task.done ? 'done': ''}" data-id="${task.id}">
+                    <span>${task.title}</span>
+                    <button onclick="toggleTask(${task.id})">
+                        ${task.done ? 'Undo' : 'Complete'}
+                    </button>
+                </div>`).join("");
+
+                 timeUpdate();
+            } catch (error){
+                error.textContent = "Could not load tasks. Is the API running?";
+            }
+        }
+
+        async function addTask() {
+            const title = newTaskInput.value.trim()
+            if (!title) return; 
+
+            try{
+                const response = await fetch(`${API}/tasks`,{
+                    method: "POST", 
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({title})
+                });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                newTaskInput.value = ""; 
+                loadTasks();
+                loadStats();
+            }catch(error){
+                error.textContent = "Failed to add task";
+            }
+            
+        }
+
+        async function toggleTask(id) {
+            try{
+                const response = await fetch(`${API}/tasks/${id}`,{
+                    method: "PATCH"
+                });
+                if(!response.ok) throw new Error(`HTTP ${response.status}`)
+                loadStats();
+                loadTasks();
+            } catch (error){
+                error.textContent = "Failed to update task";
+            }
+            
+        }
+
+        function timeUpdate(){
+            time.textContent=`Last updated: [${new Date().toLocaleTimeString()}]`
+        }
+
+        addBtn.addEventListener("click", addTask);
+        newTaskInput.addEventListener("keydown", (e) =>{
+            if (e.key === "Enter") addTask();
+        });
+        refreshBtn.addEventListener("click", (e) => {
+            loadStats()
+            loadTasks()
+        })
+            loadStats();
+            loadTasks();
+           
+        </script>
+    </body>
+</html>
