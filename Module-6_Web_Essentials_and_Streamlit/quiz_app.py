@@ -11,6 +11,7 @@
 #Results screen: After the last question, show the final score and a "Restart" button that resets all session state
 
 import streamlit as st
+import time 
 
 # st.set_page_config() with layout="wide" and a relevant title/icon
 st.set_page_config(
@@ -24,11 +25,16 @@ st.set_page_config(
 if "current_question" not in st.session_state: 
     st.session_state["current_question"] = 0 
 
+if "timer" not in st.session_state: 
+    st.session_state["timer"] = time.time()
+
 if "score" not in st.session_state: 
     st.session_state["score"] = 0 
 
 if "answered" not in st.session_state: 
     st.session_state["answered"] = False
+
+
 
 questions = [
     {
@@ -67,6 +73,18 @@ if st.session_state["current_question"] >= len(questions):
         st.session_state["score"] = 0 
         st.session_state['answered'] = False
 else: 
+
+    timer_placeholder = st.empty()
+    time_left = 15 - (time.time() - st.session_state["timer"])  
+    if time_left <=0:
+        st.session_state["current_question"] +=1
+        st.session_state["answered"] = False
+        st.session_state["timer"] = time.time()
+    else: 
+        timer_placeholder.write(f"⏰ Time remaining: **{int(time_left)}** seconds")
+        time.sleep(1)
+        st.rerun()
+        
     q = questions[st.session_state["current_question"]]
 
     with st.form("quiz_form", clear_on_submit=True):
@@ -86,6 +104,7 @@ else:
     if next and st.session_state['answered'] == True:
         st.session_state["current_question"] += 1
         st.session_state['answered'] = False
+        st.session_state['timer'] = time.time()
 
     st.write(f"Question {st.session_state['current_question'] + 1} of {len(questions)}")
     st.progress((st.session_state['current_question'] + 1)/len(questions))
