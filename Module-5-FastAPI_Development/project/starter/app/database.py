@@ -12,17 +12,19 @@ import os
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./taskmanager.db")
 
 # TODO: Create the engine
-engine = None  # TODO: replace
+engine = create_engine(DATABASE_URL)
 
 # TODO: Create SessionLocal
-SessionLocal = None  # TODO: replace
-
+SessionLocal = sessionmaker(autocommit = False, autoflush=False, bind=engine)
 
 class Base(DeclarativeBase):
     pass
 
-
 # TODO: Implement get_db
 def get_db() -> Generator[Session, None, None]:
     """Provides a DB session per request lifecycle."""
-    pass  # TODO: implement
+    db = SessionLocal()
+    try:
+        yield db
+    finally: 
+        db.close()
