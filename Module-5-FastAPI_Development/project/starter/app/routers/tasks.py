@@ -12,6 +12,7 @@ from app.database import get_db
 from app.auth import get_current_user, create_access_token
 from app.models import Task
 from app.exceptions import ForbiddenException, NotFoundException
+from typing import Optional
 
 router = APIRouter()
 
@@ -37,11 +38,15 @@ def create_task(task: TaskCreate, background_tasks: BackgroundTasks,db: Session 
 
 # TODO: GET /tasks
 @router.get("/", response_model=list[TaskResponse])
-def list_tasks(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+def list_tasks(completed: Optional[bool] = None, priority: Optional[str] = None,skip: Optional[int] = 0, limit: Optional[int] = 10,db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     """Lists all tasks for the authenticated user."""
 
-    query = db.query(Task).filter( current_user.id== Task.user_id).all()
-    return query
+    query = db.query(Task).filter(current_user.id== Task.user_id)
+    if completed is not None:
+        query = query.filter(Task.completed == completed)
+    if priority is not None:
+        query = query.filter(Task.priority == priority)
+    return query.offset(skip).limit(limit).all()
 
 
 # TODO: GET /tasks/{task_id}
@@ -92,7 +97,7 @@ def delete_task(task_id: int, db: Session = Depends(get_db), current_user = Depe
 
 
 # TODO: GET /tasks/{task_id}/suggest — placeholder for AI suggestion
-@router.get("/{task_id}/suggest")
+@router.post("/{task_id}/suggest")
 def suggest_task_action(task_id: int, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     """
     Placeholder endpoint for AI-powered task suggestions.

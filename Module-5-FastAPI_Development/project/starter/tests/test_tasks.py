@@ -56,6 +56,17 @@ def test_list_tasks_scoped_to_user(auth_headers, sample_task):
 # - test_get_task_suggest
 def test_get_task_suggest(auth_headers, sample_task):
     client = auth_headers[1]
-    response = client.get(f"/tasks/{sample_task['id']}/suggest", headers=auth_headers[0])
+    response = client.post(f"/tasks/{sample_task['id']}/suggest", headers=auth_headers[0], json=sample_task)
     assert response.status_code == 200
+    data = response.json()
+    assert data["model"] =="placeholder — AI coming in Module 7"
     
+    
+# - test_invalid_email
+def test_invalid_password(auth_headers):
+        client = auth_headers[1]
+        response = client.post("auth/token", data={
+            "username": "test1@email.com",
+            "password": "testpassword234"
+        })
+        assert response.status_code == 401

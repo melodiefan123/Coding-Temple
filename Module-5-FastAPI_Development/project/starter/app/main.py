@@ -11,12 +11,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.models import User, Task
 # TODO: Import routers
-from app.routers import auth, tasks
+from app.routers import auth, tasks, users
 from app.exceptions import AppException
 from fastapi.responses import JSONResponse
 
+tags_metadata = [
+    {
+        "name": "auth",
+        "description": "Authentication endpoints — register and login."
+    },
+    {
+        "name": "tasks",
+        "description": "Task management endpoints — create, read, update, delete."
+    },
+    {"name": "users", 
+     "description": "User management endpoints - view user profile"}
+]
 app = FastAPI(
     title="AI-Ready Task Manager",
+    openapi_tags=tags_metadata,
     description="A task management API with JWT auth and an AI suggestion endpoint.",
     version="1.0.0",
 )
@@ -42,6 +55,7 @@ async def app_exception_handler(request: Request, exc: AppException):
 
 # TODO: Include routers
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(users.router, prefix="/users", tags=["users"])
 app.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 
 
