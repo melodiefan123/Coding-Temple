@@ -24,7 +24,7 @@ class Task(Base):
     # TODO: Add columns
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(200))
-    description: Mapped[str] = mapped_column(String(2000))
+    description: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
     priority: Mapped[Priority] = mapped_column(SAEnum(Priority))
     completed: Mapped[bool]=mapped_column(default=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))

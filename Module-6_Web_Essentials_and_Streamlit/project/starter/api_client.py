@@ -34,7 +34,17 @@ def login(username: str, password: str):
       4. Catch requests.ConnectionError
     """
     # TODO: implement
-    return None, "Not implemented yet"
+    try:
+        response = requests.post(f"{API_BASE}/auth/token", data={
+            "username": username,
+            "password": password
+        })
+        if not response.ok:
+            return (None, response.json().get("detail", "Login failed"))
+        token = response.json()
+        return (token["access_token"], None)
+    except requests.exceptions.ConnectionError:
+        return (None, "Cannot connect to API")
 
 
 def get_tasks(token: str):
@@ -46,7 +56,14 @@ def get_tasks(token: str):
     Include the header: {"Authorization": f"Bearer {token}"}
     """
     # TODO: implement
-    return None, "Not implemented yet"
+    try: 
+        response = requests.get(f"{API_BASE}/tasks", headers={"Authorization": f"Bearer {token}"} )
+        if not response.ok:
+            return (None, response.json().get("detail", "Login failed"))
+        data = response.json()
+        return (data, None)
+    except requests.exceptions.ConnectionError:
+        return (None, "Cannot connect to API") 
 
 
 def create_task(token: str, title: str):
@@ -57,15 +74,31 @@ def create_task(token: str, title: str):
     TODO: Implement this function.
     """
     # TODO: implement
-    return None, "Not implemented yet"
+    try: 
+        response = requests.post(f"{API_BASE}/tasks", headers={"Authorization": f"Bearer {token}"}, json={
+            "title": title
+        })
+        if not response.ok:
+            return (None, response.json().get("detail", "Login failed"))
+        data = response.json()
+        return (data, None)
+    except requests.exceptions.ConnectionError:
+        return (None, "Cannot connect to API") 
 
 
 def complete_task(token: str, task_id: int):
     """
-    PATCH /tasks/{task_id}/complete with Bearer token.
+    PATCH /tasks/{task_id} with Bearer token.
     Returns (updated_task_dict, None) or (None, error_message).
 
     TODO: Implement this function.
     """
     # TODO: implement
-    return None, "Not implemented yet"
+    try: 
+        response = requests.patch(f"{API_BASE}/tasks/{task_id}", headers={"Authorization": f"Bearer {token}"}, json={"completed": True})
+        if not response.ok:
+            return (None, response.json().get("detail", "Login failed"))
+        data = response.json()
+        return (data, None)
+    except requests.exceptions.ConnectionError:
+        return (None, "Cannot connect to API") 

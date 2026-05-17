@@ -18,7 +18,6 @@ Build a production-quality task management REST API with:
 python -m venv venv
 source venv/bin/activate        # Mac/Linux
 venv\Scripts\activate           # Windows
-
 pip install -r requirements.txt
 cp .env.example .env            # edit SECRET_KEY before production use
 

@@ -20,7 +20,7 @@ class TaskCreate(BaseModel):
 class TaskPatch(BaseModel):
     """Input for partial task update."""
     # TODO: all Optional fields
-    title: Optional[str] = Field(min_length=1, max_length=200, description="title of task")
+    title: Optional[str] = Field(None, min_length=1, max_length=200, description="title of task")
     description: Optional[str] = Field(None, min_length=1, max_length=2000, description="Optional Description for task")
     completed: Optional[bool] = Field(default=False)
     priority: Optional[Priority] = Field(default=Priority.low)
