@@ -270,44 +270,43 @@ with tab_chat:
             "role": "user", 
             "content": prompt
         })
+        with st.spinner("Thinking..."):
 
-        with st.chat_message("assistant"):
-            placeholder = st.empty()
-            streamed = ""
+            with st.chat_message("assistant"):
+                placeholder = st.empty()
+                streamed = ""
 
-            if st.session_state['use_mock'] or not api_key:
-                response = f"Mock response to: {prompt}"
+                if st.session_state['use_mock'] or not api_key:
+                    response = f"Mock response to: {prompt}"
 
-               
-                for word in response.split():
-                    streamed += word + " "
-                    time.sleep(0.05)
-                    placeholder.write(streamed)
-            
-            else: 
-                client = anthropic.Anthropic(api_key=api_key)
                 
-                stream = client.messages.stream(
-                    model="claude-3-5-sonnet-latest",
-                    max_tokens=500,
-                    system=system_prompt,
-                    messages=[{"role": "user", "content": prompt}],
-                )
+                    for word in response.split():
+                        streamed += word + " "
+                        time.sleep(0.05)
+                        placeholder.write(streamed)
+                
+                else: 
+                    client = anthropic.Anthropic(api_key=api_key)
+                    
+                    stream = client.messages.stream(
+                        model="claude-3-5-sonnet-latest",
+                        max_tokens=500,
+                        system=system_prompt,
+                        messages=[{"role": "user", "content": prompt}],
+                    )
 
-                with stream as s:
-                    for event in s:
-                        if event.type == "content_block_delta":
-                            streamed += event.delta.text
-                            placeholder.write(streamed)
-
-        #Mock Reply
+                    with stream as s:
+                        for event in s:
+                            if event.type == "content_block_delta":
+                                streamed += event.delta.text
+                                placeholder.write(streamed)
         
-            st.session_state["messages"].append({
-                "role": "assistant",
-                "content": streamed
+        st.session_state["messages"].append({
+             "role": "assistant",
+             "content": streamed
             })
 
-            st.rerun()
+        st.rerun()
 
 
 
