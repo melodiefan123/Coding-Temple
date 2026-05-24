@@ -1,0 +1,3 @@
+CSS (Cascading Style Sheets) is a stylesheet language used to control the appearance and layout of web pages. While HTML provides the structure of a webpage, CSS is responsible for visual design elements such as colors, fonts, spacing, animations, and responsive layouts. It allows developers to create attractive and consistent user interfaces across different devices and screen sizes.
+
+CSS supports modern design techniques like Flexbox and Grid, which make it easier to build responsive and organized layouts. It also enables transitions, hover effects, and animations that improve the user experience. By separating design from structure, CSS helps developers maintain cleaner code and makes websites easier to update and manage.
