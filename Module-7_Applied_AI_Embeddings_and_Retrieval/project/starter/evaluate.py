@@ -19,7 +19,16 @@ from search import search
 # Each entry needs a query and the source filenames you expect to be relevant.
 # Use at least 5 queries for the chunking experiment.
 EVAL_SET = [
-    # {"query": "...", "relevant_sources": ["filename.txt", ...]},
+    {"query": "How do you create a FastAPI route?",
+     "relevant_sources": ["fastapi.txt"]},
+    {"query": "What are the differences between lists and dictionaries in Python?",
+     "relevant_sources": ["python-fundamentals.txt"]},
+    {"query": "How do you join tables in SQL?",
+     "relevant_sources": ["sql-databases.txt"]},
+    {"query": "What are word embeddings and how do vectors represent meaning?",
+     "relevant_sources": ["embeddings-and-vectors.txt"]},
+    {"query": "How do you display a dataframe in Streamlit?",
+     "relevant_sources": ["streamlit.txt"]},
 ]
 
 
@@ -31,14 +40,35 @@ def precision_recall(
 
     Returns (precision, recall) as floats in [0, 1].
     """
-    pass
-
+    if not retrieved_sources:
+        return (0.0, 0.0)
+    relevant_retrieved = set(retrieved_sources) & set(relevant_sources)
+    precision = len(relevant_retrieved) / len(retrieved_sources)
+    recall = len(relevant_retrieved) / len(relevant_sources)
+    return (precision, recall)
 
 def evaluate(n_results: int = 5, distance_threshold: float = None):
     """
     Run every query in EVAL_SET and print per-query and average precision/recall.
     """
-    pass
+    total_precision = 0 
+    total_recall = 0 
+    if not EVAL_SET:
+        print("Eval set is empty.")
+        return
+    for item in EVAL_SET:
+        query = item["query"]
+        relevant = set(item["relevant_sources"])
+        sources = search(query, n_results, distance_threshold)
+        retrieved_sources = [result["source"] for result in sources]
+        precision, recall = precision_recall(retrieved_sources, relevant)
+        total_precision += precision
+        total_recall += recall
+        print(f"  Query: {query}")
+        print(f"  Precision: {precision:.2f}, Recall: {recall:.2f}")
+    avg_precision = total_precision / len(EVAL_SET)
+    avg_recall = total_recall / len(EVAL_SET)
+    print(f"\n  Avg Precision: {avg_precision:.2f}, Avg Recall: {avg_recall:.2f}")
 
 
 if __name__ == "__main__":

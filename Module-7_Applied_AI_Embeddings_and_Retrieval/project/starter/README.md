@@ -52,17 +52,21 @@ See the project brief on the course platform for the full rubric. Key sections:
 
 ## Chunking Experiment Results
 
-> Fill this section in after completing the experiment.
-
-**Chunk sizes tested:** _e.g. 200 chars vs 500 chars_
+**Chunk sizes tested:** 200 chars vs 500 chars
 
 **Test queries:**
-1.
-2.
-3.
-4.
-5.
+1.How do you create a FastAPI route?
+2.What are the differences between lists and dictionaries in Python?
+3.How do you join tables in SQL?
+4.What are word embeddings and how do vectors represent meaning?
+5.How do you display a dataframe in Streamlit?
+
 
 **Findings:**
 
-_Which chunk size performed better overall, and why?_
+Both chunk sizes (200 and 500) produced identical results, with average precision 
+of 0.20 and perfect recall of 1.00 across all queries. Chunk size did not affect 
+whether the right document was found. Precision is likely limited by n_results=5 
+with single-source relevance judgments rather than chunk quality. Smaller chunks 
+(200) may be better for pinpointing specific passages, while larger chunks (500) 
+provide more context per result.

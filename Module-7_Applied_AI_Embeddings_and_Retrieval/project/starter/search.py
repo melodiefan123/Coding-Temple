@@ -79,12 +79,6 @@ def search(
         }) 
     return result_list
     
-
-
-
-
-
-
 def get_collection_stats() -> dict:
     """
     Return basic stats about the indexed collection.
