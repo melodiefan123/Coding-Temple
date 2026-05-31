@@ -13,3 +13,6 @@ Make sure you've indexed documents first:
 import streamlit as st
 from search import search, get_collection_stats
 from ingest import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP
+with st.sidebar:
+    st.title("Semantic Search Engine")
+    
