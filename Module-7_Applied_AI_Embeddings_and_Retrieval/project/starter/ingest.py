@@ -92,6 +92,7 @@ def ingest(chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP)
     and the chunk size used — so experiments with different sizes can
     be compared without ambiguity.
     """
+    model = SentenceTransformer(MODEL_NAME)
     documents = load_documents(DOCS_DIR)
     collection = get_collection(CHROMA_PATH, COLLECTION_NAME)
     all_chunks = []
@@ -103,7 +104,6 @@ def ingest(chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP)
             all_chunks.append(chunk)
             all_metadatas.append({"filename": doc["filename"], "chunk_index": i, "chunk_size": chunk_size, "overlap": overlap})
             all_ids.append(f"{doc['filename']}_{chunk_size}_{overlap}_{i}")
-    model = SentenceTransformer(MODEL_NAME)
     embeddings = model.encode(all_chunks)
     collection.upsert(
         documents = all_chunks, 
