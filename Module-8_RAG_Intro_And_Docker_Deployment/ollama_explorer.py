@@ -34,6 +34,7 @@ print(f"\n=====Experiment 1: Senior SE Explanation====")
 print(generate("What is an API?", system="You are a senior software architect. Be technical and precise."))
 # Ask "What is an API?" with three different system prompts: (a) no system prompt, (b) "Explain like I’m 5 years old," (c) "You are a senior software architect. Be technical and precise."
 # Compare how the responses differ
+    #Responses correlate to the system prompt. Senior SE gives a more detailed and technical answer, while ELI5 gives a simpler explanation.
 
 
 
@@ -43,16 +44,16 @@ context = ("FastAPI is a modern python web framework. It uses Pydantic for valid
 rag_system = ("Answer the user's question based ONLY on the following context. If the context doesn't contain the answer, say 'I don't have enough information to answer that'\n\n"
               f"CONTEXT: \n{context}")
 
-# Ask a question that CAN be answered from the context
+# # Ask a question that CAN be answered from the context
 print(f"====Experiment 2: question that can be answered from context====")
 print(generate("What framework should I use to build a python API?", system=rag_system))
 # Ask a question that CANNOT be answered from the context
 print(f"\n===Experiment 2: Question that CANNOT be answered from context=== ")
 print(generate("How do I deploy Kubernets", system=rag_system))
 # Does the model correctly refuse the second question?
+ #Model doesn't correctly refuse the second question, it tries to answer based on the context but ends up giving an incorrect answer about FastAPI instead of admitting it doesn't have enough information. Good note for the importance of clear system prompt instructions and testing edge cases. 
 
-
-# Experiment 3: Response timing
+# # Experiment 3: Response timing
 
 # Ask questions of varying length (short: 5 words, medium: 20 words, long: 50 words)
 print(f"\n===Experiment 3: 5 Words Question=== ")
@@ -62,7 +63,7 @@ print(generate("Can you explain how FastAPI handles request validation and what 
 print(f"\n===Experiment 3: 50 Words Question=== ")
 print(generate("Can you walk me through the complete lifecycle of an HTTP request in a FastAPI application, starting from when a client sends a POST request with JSON data, through Pydantic validation, route handler execution, database interaction, and finally how the response is serialized and returned to the client?"))
 # Record and compare response times
-
+    # Longer questions take more time to generate a response, but generates a more meaningful response. 
 
 
 # Experiment 4: Temperature (optional)
@@ -75,3 +76,4 @@ print(f"\n===Experiment 4: 1.0 Temperature=== ")
 print(generate("What is API?", temperature=1.0))
 
 # Compare how deterministic vs creative the responses are
+ #The higher the temperature, the more creative and varied the response.

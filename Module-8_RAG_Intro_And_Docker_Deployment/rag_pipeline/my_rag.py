@@ -139,11 +139,11 @@ if __name__=="__main__":
     else: 
         print(f"Using existing collection: {collection.count()} chunks")
     
-    print("\\nRAG Pipeline Ready! Ask questions about your documents.")
-    print("Type 'quit' to exit.\\n")
+    print("\nRAG Pipeline Ready! Ask questions about your documents.")
+    print("Type 'quit' to exit.\n")
 
     while True:
-        question = input("\\nYou: ").strip()
+        question = input("\nYou: ").strip()
         if question.lower() in ('quit', 'exit', 'q'):
             break
         if question:
@@ -151,7 +151,9 @@ if __name__=="__main__":
 
 # Test with at least 3 questions:
 # One that should be answerable from your documents
-print(f"\n{'='*60}")
-
 # One that’s related but not directly in the documents
 # One that’s completely outside the scope
+
+# Test 1 (answerable): "What is ChromaDB used for?" → correctly answered from module7_chromadb.txt
+# Test 2 (related but not in docs): "How does Pinecone compare to ChromaDB?" → said it didn't have enough info
+# Test 3 (out of scope): "What is the best pizza recipe?" → correctly refused
