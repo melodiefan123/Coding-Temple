@@ -20,7 +20,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
 
-volumes:
+volumes: 
   chroma_data:
   ollama_data:
 

@@ -9,7 +9,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
     allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 # Read config from environment variables (set in docker-compose.yml)
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "<http://localhost:11434>")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 MODEL = os.environ.get("MODEL_NAME", "llama3.2:1b")
 
 client = chromadb.PersistentClient(path="/app/chroma_data")
