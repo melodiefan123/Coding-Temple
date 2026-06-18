@@ -16,7 +16,7 @@
 # from outside the container (the same reason uvicorn uses --host 0.0.0.0).
 
 # TODO: FROM ...
-FROM python: 3.11-slim
+FROM python:3.11-slim
 # TODO: WORKDIR ...
 WORKDIR /app
 

@@ -75,7 +75,7 @@ with st.sidebar:
 
     if st.button("Re-index Documents"):
         try:
-            ingest_response = requests.post(BACKEND_URL + "/ingest", timeout=10)
+            ingest_response = requests.post(BACKEND_URL + "/ingest", timeout=60)
             if ingest_response.status_code == 200:
                 ingest_data = ingest_response.json()
                 chunks_ingested = ingest_data.get("chunks_ingested", "unknown")
@@ -149,7 +149,7 @@ if user_input:
 
     with st.spinner("Generating answer..."):
         try:
-            response = requests.post(BACKEND_URL + "/ask", json={"question": user_input}, timeout=10)
+            response = requests.post(BACKEND_URL + "/ask", json={"question": user_input}, timeout=60)
             if response.status_code == 200:
                 data = response.json()
                 answer = data.get("answer", "No answer provided.")

@@ -32,7 +32,9 @@ def test_root():
       - "message" in response.json()
     """
     # TODO: implement
-    pass
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "message" in response.json()
 
 
 def test_health():
@@ -46,7 +48,11 @@ def test_health():
       - "ollama"   in response.json()
     """
     # TODO: implement
-    pass
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert "status" in response.json()
+    assert "chromadb" in response.json()
+    assert "ollama" in response.json()
 
 
 def test_stats():
@@ -59,4 +65,7 @@ def test_stats():
       - "model"          in response.json()
     """
     # TODO: implement
-    pass
+    response = client.get("/stats")
+    assert response.status_code == 200
+    assert "document_count" in response.json()
+    assert "model" in response.json()

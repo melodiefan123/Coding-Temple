@@ -19,9 +19,9 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # TODO: COPY requirements.txt .
-COPY requirements.txt .
 RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
     && rm -rf /var/lib/apt/lists/*
+COPY requirements.txt .
 # TODO: RUN pip install ...
 RUN pip install --no-cache-dir -r requirements.txt
 
