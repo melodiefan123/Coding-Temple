@@ -20,11 +20,12 @@ import os
 import requests
 import chromadb
 from config import settings
+import json
 
 # ── ChromaDB client ────────────────────────────────────────────────────────
 # TODO: Create a PersistentClient pointed at settings.chroma_path
-# chroma_client = chromadb.PersistentClient(path=...)
-# collection    = chroma_client.get_or_create_collection("documents")
+chroma_client = chromadb.PersistentClient(path=settings.chroma_path)
+collection = chroma_client.get_or_create_collection("documents")
 
 
 # ── 1. Document loading ────────────────────────────────────────────────────
@@ -50,7 +51,21 @@ def load_documents(directory: str) -> list[dict]:
       4. Return the list
     """
     # TODO: implement
-    return []
+    documents = os.listdir(directory)
+    result = []
+    for doc in documents:
+        if doc.endswith(".txt") or doc.endswith(".md"):
+            with open(os.path.join(directory, doc), "r") as f:
+                text = f.read()
+                chunks = text.split("\n\n")
+                for i, chunk in enumerate(chunks):
+                    if chunk.strip():  # skip empty chunks
+                        result.append({
+                            "text": chunk.strip(),
+                            "id": f"{doc}_{i}",
+                            "metadata": {"source": doc, "chunk_index": i},
+                        })
+    return result
 
 
 # ── 2. Retrieval ───────────────────────────────────────────────────────────
@@ -68,8 +83,18 @@ def retrieve(query: str, n_results: int = 3, max_distance: float = 1.2) -> list[
       3. Zip documents, metadatas, and distances into result dicts
       4. Filter by max_distance
     """
-    # TODO: implement
-    return []
+    count = collection.count()
+    if count == 0:
+        return []
+    results = collection.query(query_texts=[query], n_results=n_results)
+    documents = results["documents"][0]  # list of texts
+    metadatas = results["metadatas"][0]  # list of metadata dicts
+    distances = results["distances"][0]  # list of floats
+    retrieved = []
+    for doc, meta, dist in zip(documents, metadatas, distances):
+        if dist <= max_distance:
+            retrieved.append({"text": doc, "metadata": meta, "distance": dist})
+    return retrieved
 
 
 # ── 3. Prompt building ─────────────────────────────────────────────────────
@@ -97,8 +122,13 @@ def build_prompt(question: str, chunks: list[dict]) -> list[dict]:
       3. Return [system_message, user_message]
     """
     # TODO: implement
+    context_parts = []
+    for chunk in chunks:
+        source = chunk['metadata']['source']
+        context_parts.append(f"[Source: {source}]\n{chunk['text']}")
+    context = "\n\n".join(context_parts)
     return [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": f"{SYSTEM_PROMPT}\n\nCONTEXT:\n{context}"},
         {"role": "user",   "content": question},
     ]
 
@@ -117,8 +147,17 @@ def generate(messages: list[dict]) -> str:
       3. Parse response.json()["message"]["content"]
       4. Handle requests.exceptions.ConnectionError gracefully
     """
-    # TODO: implement
-    return "Ollama is not connected — implement generate() in rag.py"
+    try: 
+        response = requests.post(f"{settings.ollama_url}/api/chat", json={
+            "model": settings.model_name, 
+            "messages": messages, 
+            "stream": False
+        })
+        return response.json()["message"]["content"]
+    # Handle the case where Ollama isn’t running (graceful error message)
+    except requests.exceptions.ConnectionError: 
+         return "Ollama is not connected — implement generate() in rag.py"
+   
 
 
 # ── 5. Confidence scoring ──────────────────────────────────────────────────
@@ -136,8 +175,15 @@ def compute_confidence(chunks: list[dict]) -> str:
 
     TODO: Implement this function.
     """
-    # TODO: implement
-    return "low"
+    if not chunks: 
+        return "low"
+    best_distance = chunks[0]['distance']
+    if best_distance < 0.5:
+        return "high"
+    elif best_distance < 1.0:
+        return "medium"
+    else:
+        return "low"
 
 
 # ── Quick test (run as a script) ───────────────────────────────────────────

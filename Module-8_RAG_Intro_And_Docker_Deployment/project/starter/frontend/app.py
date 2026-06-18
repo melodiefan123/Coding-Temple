@@ -29,14 +29,15 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 # ── Step 1: Page configuration ─────────────────────────────────────────────
 # TODO: st.set_page_config(page_title="RAG Assistant", page_icon="🔍", layout="centered")
+st.set_page_config(page_title="RAG Assistant", page_icon="🔍", layout="centered")
 
 # ── Step 2: Session state initialisation ───────────────────────────────────
 # TODO: Initialise "chat_history" as an empty list if it doesn't exist yet.
+
 # Always initialise session state keys before reading them to avoid KeyError.
 #
-#   if "chat_history" not in st.session_state:
-#       st.session_state.chat_history = []
-
+if "chat_history" not in st.session_state:
+    st.session_state.chat_history = []
 
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION A — SIDEBAR
@@ -51,13 +52,45 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 #     On click: POST BACKEND_URL + "/ingest"
 #     Show st.success with the number of chunks ingested, or st.error on failure
 
+with st.sidebar:
+    st.title("RAG Assistant")
+    st.caption("Ask questions grounded in your documents.")
 
+    # Health check
+    try:
+        health_response = requests.get(BACKEND_URL + "/health", timeout=2)
+        if health_response.status_code == 200:
+            st.success("Backend: connected")
+            health_data = health_response.json()
+            chroma_status = health_data.get("chromadb", "unknown")
+            ollama_status = health_data.get("ollama", "unknown")
+            doc_count = health_data.get("document_count", "unknown")
+            st.caption(f"Chroma_status: {chroma_status} | Ollama_status: {ollama_status} | Documents: {doc_count}")
+        else:
+            st.error(f"Backend error: {health_response.status_code}")
+    except requests.exceptions.RequestException:
+        st.error("Backend: unreachable")
+
+    st.divider()
+
+    if st.button("Re-index Documents"):
+        try:
+            ingest_response = requests.post(BACKEND_URL + "/ingest", timeout=10)
+            if ingest_response.status_code == 200:
+                ingest_data = ingest_response.json()
+                chunks_ingested = ingest_data.get("chunks_ingested", "unknown")
+                st.success(f"Re-indexed documents: {chunks_ingested} chunks ingested.")
+            else:
+                st.error(f"Ingest error: {ingest_response.status_code}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Ingest failed: {str(e)}")
 # ════════════════════════════════════════════════════════════════════════════
 # SECTION B — MAIN CONTENT
 # ════════════════════════════════════════════════════════════════════════════
 # TODO: st.title("RAG Assistant")
 # TODO: st.caption("Ask questions grounded in your documents.")
-
+st.title("RAG Assistant")
+st.caption("Ask questions grounded in your documents.")
 # ── Chat history display ───────────────────────────────────────────────────
 # TODO: Loop over st.session_state.chat_history and render each message.
 #
@@ -70,7 +103,20 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 #
 # For assistant messages that have a "sources" key, show citations in an expander.
 # For assistant messages that have a "confidence" key, show a colour-coded badge.
-
+for msg in st.session_state.chat_history:
+    with st.chat_message(msg["role"]):
+        st.markdown(msg["content"])
+        if msg["role"] == "assistant":
+            sources = msg.get("sources", [])
+            confidence = msg.get("confidence", "unknown")
+            if confidence != "unknown":
+                CONFIDENCE_COLOURS = {"high": "green", "medium": "orange", "low": "red"}
+                colour = CONFIDENCE_COLOURS.get(confidence, "gray")
+                st.markdown(f":{colour}[Confidence: **{confidence}**]")
+            if sources:
+                with st.expander("Sources"):
+                    for src in sources:
+                        st.markdown(f"- {src}")
 
 # ── Chat input ─────────────────────────────────────────────────────────────
 # TODO: Use st.chat_input("Ask a question...") to get user input.
@@ -93,3 +139,37 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 # CONFIDENCE_COLOURS = {"high": "green", "medium": "orange", "low": "red"}
 # colour = CONFIDENCE_COLOURS.get(confidence, "gray")
 # st.markdown(f":{colour}[Confidence: **{confidence}**]")
+
+user_input = st.chat_input("Ask a question...")
+if user_input:
+    user_message = {"role": "user", "content": user_input}
+    st.session_state.chat_history.append(user_message)
+    with st.chat_message("user"):
+        st.markdown(user_input)
+
+    with st.spinner("Generating answer..."):
+        try:
+            response = requests.post(BACKEND_URL + "/ask", json={"question": user_input}, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                answer = data.get("answer", "No answer provided.")
+                sources = data.get("sources", [])
+                confidence = data.get("confidence", "unknown")
+
+                assistant_message = {"role": "assistant", "content": answer, "sources": sources, "confidence": confidence}
+                st.session_state.chat_history.append(assistant_message)
+
+                with st.chat_message("assistant"):
+                    st.markdown(answer)
+                    if confidence != "unknown":
+                        CONFIDENCE_COLOURS = {"high": "green", "medium": "orange", "low": "red"}
+                        colour = CONFIDENCE_COLOURS.get(confidence, "gray")
+                        st.markdown(f":{colour}[Confidence: **{confidence}**]")
+                    if sources:
+                        with st.expander("Sources"):
+                            for src in sources:
+                                st.markdown(f"- {src}")
+            else:
+                st.error(f"Error from backend: {response.status_code} - {response.text}")
+        except requests.exceptions.RequestException as e:
+            st.error(f"Cannot reach the backend at {BACKEND_URL}: {str(e)}")

@@ -16,15 +16,20 @@ Required environment variables (see .env.example):
     CONFIDENCE_THRESHOLD  Maximum distance for filtering     default: 1.0
     DEBUG                 Enable verbose logging             default: false
 """
-
 import os
 
-
 class Settings:
+    OLLAMA_URL: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    MODEL_NAME: str = os.getenv("MODEL_NAME", "llama3.2:1b")
+    CHROMA_PATH: str = os.getenv("CHROMA_PATH", "/app/chroma_data")
+    MAX_RESULTS: int = int(os.getenv("MAX_RESULTS", "5"))
+    CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.7"))
+    DEBUG: bool = os.getenv("DEBUG", "false").lower() == "true"
     def __init__(self):
         # TODO: Read each environment variable with os.environ.get()
         # Provide sensible defaults so the app works without a .env file.
         #
+        
         # Example:
         #   self.ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
         #
@@ -33,13 +38,12 @@ class Settings:
         # Cast floats:          float(os.environ.get("CONFIDENCE_THRESHOLD", "1.0"))
         # Cast bools:           os.environ.get("DEBUG", "false").lower() == "true"
 
-        # TODO: self.ollama_url = ...
-        # TODO: self.model_name = ...
-        # TODO: self.chroma_path = ...
-        # TODO: self.max_results = ...
-        # TODO: self.confidence_threshold = ...
-        # TODO: self.debug = ...
-        pass
+        self.ollama_url = os.environ.get("OLLAMA_URL", "http://localhost:11434")
+        self.model_name = os.environ.get("MODEL_NAME", "llama3.2:1b")
+        self.chroma_path = os.environ.get("CHROMA_PATH", "/app/chroma_data")
+        self.max_results = int(os.environ.get("MAX_RESULTS", "5"))
+        self.confidence_threshold = float(os.environ.get("CONFIDENCE_THRESHOLD", "0.7"))
+        self.debug = os.environ.get("DEBUG", "false").lower() == "true"
 
 
 # Module-level singleton — import and use this everywhere

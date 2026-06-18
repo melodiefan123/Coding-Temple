@@ -16,14 +16,22 @@
 # from outside the container (the same reason uvicorn uses --host 0.0.0.0).
 
 # TODO: FROM ...
-
+FROM python: 3.11-slim
 # TODO: WORKDIR ...
+WORKDIR /app
 
 # TODO: COPY requirements.txt .
+COPY requirements.txt .
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential \
+    && rm -rf /var/lib/apt/lists/*
 # TODO: RUN pip install ...
+RUN pip install --no-cache-dir -r requirements.txt
 
 # TODO: COPY . .
+COPY . .
 
 # TODO: EXPOSE ...
+EXPOSE 8501
 
 # TODO: CMD [...]
+CMD ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]

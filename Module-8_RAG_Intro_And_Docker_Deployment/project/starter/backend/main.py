@@ -16,7 +16,7 @@ Required endpoints:
     GET  /health    → ChromaDB status, Ollama connectivity, document count
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, requests
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 from config import settings
@@ -70,8 +70,7 @@ class IngestResponse(BaseModel):
 
 @app.get("/")
 def root():
-    # TODO: Return a welcome dict, e.g. {"message": "RAG API is running", "docs": "/docs"}
-    return {"message": "TODO: implement root endpoint"}
+    return {"message": "RAG API is running", "docs": "/docs"}
 
 
 @app.post("/ask", response_model=AskResponse)
@@ -87,11 +86,20 @@ def ask(req: AskRequest):
 
     TODO: Implement this endpoint.
     """
-    # TODO: implement
+    chunks = rag.retrieve(req.question, req.n_results, req.max_distance)
+    if not chunks: 
+        return AskResponse(
+            answer="No documents found. Please ingest some documents first.", 
+            sources=[], 
+            confidence="low")
+    messages = rag.build_prompt(req.question, chunks)
+    answer = rag.generate(messages)
+    confidence = rag.compute_confidence(chunks)
+
     return AskResponse(
-        answer="TODO: implement the /ask endpoint",
-        sources=[],
-        confidence="low",
+        answer=answer,
+        sources=[SourceChunk(text=c["text"], source=c["metadata"]["source"], distance=c["distance"]) for c in chunks],
+        confidence=confidence,
     )
 
 
@@ -107,8 +115,18 @@ def ingest():
     TODO: Implement this endpoint.
     Hint: access the ChromaDB collection via rag.collection
     """
-    # TODO: implement
-    return IngestResponse(chunks_ingested=0, message="TODO: implement /ingest")
+    documents = rag.load_documents(DOCS_DIR)
+    if not documents: 
+        return IngestResponse(
+            chunks_ingested=0,
+            message=f"No documents found in {DOCS_DIR}. Please add some .txt files and try again."
+        )
+    rag.collection.upsert(
+        documents=[d["text"] for d in documents],
+        metadatas=[d["metadata"] for d in documents],
+        ids=[d["id"] for d in documents],
+    )
+    return IngestResponse(chunks_ingested=len(documents), message="Documents ingested successfully.")
 
 
 @app.get("/stats")
@@ -118,8 +136,8 @@ def stats():
     TODO: Return a dict with "document_count", "model", and "db_path".
     Hint: rag.collection.count(), settings.model_name, settings.chroma_path
     """
-    # TODO: implement
-    return {"document_count": 0, "model": settings.model_name, "db_path": settings.chroma_path}
+    
+    return {"document_count": rag.collection.count(), "model": settings.model_name, "db_path": settings.chroma_path}
 
 
 @app.get("/health")
@@ -138,5 +156,18 @@ def health():
 
     To check Ollama: try GET settings.ollama_url + "/api/tags" with a short timeout.
     """
-    # TODO: implement
-    return {"status": "TODO", "chromadb": "unknown", "ollama": "unknown", "document_count": 0}
+    ollama_ok = False
+    chromadb_ok = False
+    try:
+        chromadb_ok = rag.collection.count() >= 0  # simple check to see if we can query the collection
+        r = requests.get(f"{settings.ollama_url}/api/tags", timeout=3)
+        ollama_ok = r.status_code == 200
+    except Exception:
+        pass
+    return {
+        "status": "ok" if ollama_ok and chromadb_ok else "degraded",
+        "chromadb": "connected" if chromadb_ok else "unavailable",
+        "ollama": "connected" if ollama_ok else "unavailable",
+        "ollama_url": settings.ollama_url,
+        "documents": rag.collection.count()
+    }
