@@ -45,15 +45,10 @@ def load_students(filepath: str) -> list[dict]:
         with open(filepath, 'r') as file:
             reader = csv.DictReader(file)
             for row in reader: 
-                row['math'] = int(row['math']) if row['math'] else None
-                row['science'] = int(row['science']) if row['science'] else None
-                row['english'] = int(row['english']) if row['english'] else None
-                row['history'] = int(row['history']) if row['history'] else None
+                students.append(dict(row))
                 students.append(row)
     except FileNotFoundError: 
         print("File not found. Please check the filename.")
-    except ValueError:
-        print("Please enter a valid number for grades.")
     return students
 
 # TEST ONLY print(load_students('data/students.csv'))
@@ -79,20 +74,22 @@ def calculate_average(grades: list) -> float | None:
 #     #       Skip items that raise ValueError or are empty strings.
 #     #       If the resulting list is empty, return None.
 #     #       Otherwise return round(sum / count, 1).
-    try:
         valid_grades=[]
        
-        for grade in grades: 
-            if grade is not None: 
-                valid_grades.append(grade)
-        if not valid_grades: 
+        for grade in grades:
+        # Skip empty strings, spaces, or None values explicitly
+            if grade is None or str(grade).strip() == "":
+                continue
+            try:
+                valid_grades.append(float(grade))
+            except ValueError:
+            # Skip items that cannot be safely converted to a number
+                continue
+            
+        if not valid_grades:
             return None
-        total_sum = sum(valid_grades)
-        count = len(valid_grades)
-        average = total_sum / count 
-        return round(average, 1)
-    except ValueError:
-        print("Please enter a valid number.")
+        
+        return round(sum(valid_grades) / len(valid_grades), 1)
 
 
 # # ============================================================

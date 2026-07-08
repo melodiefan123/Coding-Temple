@@ -28,30 +28,35 @@ def generate_report(students: list[dict]) -> dict:
 #     #   4. Build the student summary dict
 #     # Then compute class-level stats from all the averages.
 #     pass
-    students = add_student(students)
     total_students = len(students)
     grade_distribution = {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0, "N/A": 0}
     student_summaries = []
     all_averages = []
-    if not students:
+
+    if total_students == 0:
         return {
             "total_students": 0,
             "class_average": None,
             "highest_average": None,
             "lowest_average": None,
-            "grade_distribution": {"A": 0, "B": 0, "C": 0, "D": 0, "F": 0, "N/A": 0},
+            "grade_distribution": grade_distribution,
             "students": []
         }
+    
     for student in students: 
-        grades = [student['math'], student['science'], student['english'], student['history']]
+        subjects = ['math', 'science', 'english', 'history']
+        grades = [student.get(sub) for sub in subjects]
+        
         average = calculate_average(grades)
         letter_grade = get_letter_grade(average)
+
         student_summary = {
             "name": student['student_name'],
             "average": average,
             "grade": letter_grade
         }
         student_summaries.append(student_summary)
+
         grade_distribution[letter_grade] += 1
         if average is not None:
             all_averages.append(average)
@@ -65,6 +70,8 @@ def generate_report(students: list[dict]) -> dict:
         "grade_distribution": grade_distribution,
         "students": student_summaries
         }
+    
+    
     highest_average = float(max(all_averages))
     lowest_average = float(min(all_averages))
     class_average = round(sum(all_averages) / len(all_averages), 1)
