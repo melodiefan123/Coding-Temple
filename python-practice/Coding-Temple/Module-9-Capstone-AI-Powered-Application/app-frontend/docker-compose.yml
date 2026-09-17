@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # 1. Local AI Inference Service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ledgeai_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # 2. FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ledgeai_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - sqlite_storage:/app/data
+      - chromadb_storage:/app/chroma
+    environment:
+      - DATABASE_URL=sqlite:////app/data/ledgeai.db
+      - CHROMADB_PATH=/app/chroma
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - ollama
+    restart: always
+
+  # 3. Streamlit UI Presentation Layer
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ledgeai_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  sqlite_storage:
+  chromadb_storage:
+  ollama_storage:

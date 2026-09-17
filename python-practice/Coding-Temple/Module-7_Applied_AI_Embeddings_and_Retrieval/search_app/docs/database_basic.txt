@@ -1,0 +1,5 @@
+Databases are systems used to store, organize, and manage data efficiently. They allow applications to save information such as user accounts, product details, transactions, and other important records in a structured way. Instead of storing data in simple files, databases make it easier to search, update, and retrieve information quickly and securely.
+
+The most common type is a relational database, which organizes data into tables made up of rows and columns. These tables can be connected using relationships and keys, helping reduce duplication and maintain consistency. Languages like SQL (Structured Query Language) are used to interact with relational databases by creating tables, inserting data, and running queries.
+
+There are also NoSQL databases, which are designed for flexible and large-scale applications that may handle unstructured or rapidly changing data. Databases are an essential part of modern software systems, powering websites, mobile apps, banking systems, social media platforms, and many other technologies.

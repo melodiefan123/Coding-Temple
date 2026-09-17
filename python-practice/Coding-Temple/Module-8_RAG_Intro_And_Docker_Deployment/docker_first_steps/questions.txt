@@ -1,0 +1,6 @@
+What happens when you docker run the same image twice?
+- Docker will create 2 separate containers for them 
+What happens to files created inside a container when it stops?
+- all files are in ephemeral state. In real life applications, it might be detrimental as it can erase all files created within the container.
+How is the -p flag used to map ports?
+- take the format -p HOST:CONTAINER. It forwards container ports to the right host
