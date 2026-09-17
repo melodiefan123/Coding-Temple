@@ -1,0 +1,11 @@
+my-app/
+├── backend/
+│   ├── main.py          # FastAPI app
+│   ├── models.py        # SQLAlchemy models
+│   ├── schemas.py       # Pydantic schemas
+│   └── requirements.txt
+├── frontend/
+│   ├── app.py           # Streamlit app
+│   ├── api_client.py    # Centralized API calls
+│   └── requirements.txt
+└── README.md

@@ -1,0 +1,43 @@
+my-api/
+├── app/
+│   ├── __init__.py          ← Makes 'app' a Python package
+│   ├── main.py              ← FastAPI application entry point
+│   ├── config.py            ← Settings and environment variables
+│   ├── database.py          ← Database connection and session setup
+│   ├── models/              ← SQLAlchemy database models; defines databases
+│   │   ├── __init__.py
+│   │   └── user.py
+│   ├── schemas/             ← Pydantic validation models; defines your request/response shapes
+│   │   ├── __init__.py
+│   │   └── user.py
+│   ├── routers/             ← API endpoint definitions; defines your endpoints.
+│   │   ├── __init__.py
+│   │   └── users.py
+│   └── utils/               ← Helper functions
+│       ├── __init__.py
+│       └── security.py
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   └── test_users.py
+├── .env
+├── .gitignore
+├── requirements.txt
+└── README.md
+
+Why This Structure?
+
+Separation of concerns — Each file has one job. models/ defines your database tables. schemas/ defines your request/response shapes. routers/ defines your endpoints. When something breaks, you know exactly where to look.
+
+Scalability — Adding a new resource (say, "tasks") means adding models/task.py, schemas/task.py, and routers/tasks.py. You don't touch existing files. The pattern scales cleanly.
+
+Team collaboration — Two developers can work on different routers without creating merge conflicts. The structure makes parallel work possible.
+
+Testing — Tests live in their own directory and mirror the app structure. Easy to find, easy to run.
+
+app/models/ vs app/schemas/
+This distinction confuses many beginners, so let's be clear:
+
+Models (SQLAlchemy) define what your database tables look like. They describe how data is stored.
+
+Schemas (Pydantic) define what your API requests and responses look like. They describe how data is transferred.

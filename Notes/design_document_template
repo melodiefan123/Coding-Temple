@@ -1,0 +1,23 @@
+API Design: Study Group Platform
+Version: v1
+Base URL: <https://api.studygroups.com/v1>
+
+Authentication: JWT Bearer token
+Rate Limit: 100 requests per minute
+
+Resources:
+
+1. Users
+2. Groups
+3. Messages
+4. Assignments
+
+Endpoints:
+[List each endpoint with method, path, description,
+request schema, response schema, and error codes]
+
+Relationships:
+[Describe how resources connect]
+
+Notes:
+[Any design decisions or trade-offs worth documenting]
