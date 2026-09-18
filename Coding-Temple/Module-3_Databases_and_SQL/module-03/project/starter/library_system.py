@@ -3,24 +3,29 @@ Module 3 Project: Library Management System
 library_system.py — Database models and query functions
 """
 
-from sqlalchemy import create_engine, String, Integer, Boolean, ForeignKey, Table, Column, Date, func
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, Session
 from datetime import date, timedelta
 from typing import Optional
+from sqlalchemy import (
+    create_engine, String, Integer, Boolean, ForeignKey, 
+    Table, Column, Date, func
+)
+from sqlalchemy.orm import (
+    DeclarativeBase, Mapped, mapped_column, 
+    relationship, Session, joinedload
+)
 
 engine = create_engine("sqlite:///library.db", echo=False)
 
 class Base(DeclarativeBase):
     pass
 
-# Association Table: Book <-> Genre (many-to-many)
+# Association Tables
 book_genres = Table(
     "book_genres", Base.metadata,
     Column("book_id", Integer, ForeignKey("books.id"), primary_key=True),
     Column("genre_id", Integer, ForeignKey("genres.id"), primary_key=True),
 )
 
-# Association Table: Book <-> Author (many-to-many)
 book_author = Table(
     "book_author", Base.metadata, 
     Column("author_id", Integer, ForeignKey("authors.id"), primary_key=True),
@@ -75,7 +80,6 @@ class Checkout(Base):
     members: Mapped["Member"] = relationship(back_populates="check_outs")
 
 def init_db():
-    """Create all database tables."""
     Base.metadata.create_all(engine)
 
 # ============================================================
@@ -88,11 +92,15 @@ def add_author(name: str, bio: str = None):
         session.add(new_author)
         session.commit()
         session.refresh(new_author)
+        session.expunge(new_author)
         return new_author
 
-def add_book(title: str, isbn: str, author_id: int, published_year: int = None, genre_names: list = None):
+def add_book(title: str, isbn: str, author_ids: list[int] | int, year_published: int = None, genre_names: list = None):
     with Session(engine) as session: 
-        author = session.query(Author).filter(Author.id == author_id).first()
+        if isinstance(author_ids, int):
+            author_ids = [author_ids]
+            
+        authors = session.query(Author).filter(Author.id.in_(author_ids)).all()
         genres = []
         if genre_names: 
             for name in genre_names: 
@@ -104,13 +112,14 @@ def add_book(title: str, isbn: str, author_id: int, published_year: int = None, 
         new_book = Book(
             title=title, 
             isbn=str(isbn), 
-            author=[author] if author else [], 
-            published_year=published_year, 
+            author=authors, 
+            published_year=year_published, 
             genre=genres
         )
         session.add(new_book)
         session.commit()
         session.refresh(new_book)
+        session.expunge_all()
         return new_book
 
 def add_member(name: str, email: str, phone: str = None):
@@ -119,6 +128,7 @@ def add_member(name: str, email: str, phone: str = None):
         session.add(new_member)
         session.commit()
         session.refresh(new_member)
+        session.expunge(new_member)
         return new_member
 
 def checkout_book(book_id: int, member_id: int, days: int = 14):
@@ -135,6 +145,7 @@ def checkout_book(book_id: int, member_id: int, days: int = 14):
             session.add(checkout_object)
             session.commit()
             session.refresh(checkout_object)
+            session.expunge_all()
             return checkout_object
         else: 
             raise ValueError("Book not available")
@@ -150,6 +161,7 @@ def return_book(checkout_id: int):
             book.available = True
         session.commit()
         session.refresh(checkout)
+        session.expunge_all()
         return checkout
 
 # ============================================================
@@ -164,17 +176,20 @@ def search_books_by_title(title: str) -> list:
 def find_books_by_author(author_name: str) -> list:
     with Session(engine) as session: 
         books = session.query(Book).join(book_author).join(Author).filter(Author.name.ilike(f"%{author_name}%")).all()
-        return [{"id": b.id, "title": b.title} for b in books]
+        session.expunge_all()
+        return books
 
 def get_overdue_books() -> list:
     with Session(engine) as session: 
         checkouts = session.query(Checkout).filter(Checkout.return_date == None, Checkout.due_date < date.today()).all()
-        return [{"id": c.id, "book_id": c.book_id, "member_id": c.member_id, "due_date": c.due_date} for c in checkouts]
+        session.expunge_all()
+        return checkouts
 
 def get_popular_genres(limit: int = 3) -> list:
     with Session(engine) as session: 
         results = session.query(Genre).join(book_genres).join(Book).join(Checkout).group_by(Genre.id).order_by(func.count(Checkout.id).desc()).limit(limit).all()
-        return [{"id": g.id, "name": g.name} for g in results]
+        session.expunge_all()
+        return results
 
 def get_available_books() -> list:
     with Session(engine) as session:
@@ -184,7 +199,8 @@ def get_available_books() -> list:
 def list_member_borrowings(member_id: int) -> list:
     with Session(engine) as session: 
         checkouts = session.query(Checkout).filter(Checkout.member_id == member_id, Checkout.return_date == None).all()
-        return [{"id": c.id, "book_id": c.book_id, "due_date": c.due_date} for c in checkouts]
+        session.expunge_all()
+        return checkouts
 
 def update_member_email(member_id: int, new_email: str):
     with Session(engine) as session: 
@@ -193,6 +209,7 @@ def update_member_email(member_id: int, new_email: str):
             member.email = new_email
             session.commit()
             session.refresh(member)
+            session.expunge(member)
         return member
 
 def delete_book(book_id: int) -> bool:
