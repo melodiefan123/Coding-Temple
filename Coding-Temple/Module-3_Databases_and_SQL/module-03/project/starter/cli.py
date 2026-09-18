@@ -12,7 +12,6 @@ from library_system import (
 )
 
 def menu_add_book():
-    """Prompt for book details and add to the database."""
     title = input("Please enter the title: ").strip()
     isbn = input("Please enter the ISBN: ").strip()
     author_name = input("Please enter the author's name: ").strip()
@@ -28,26 +27,19 @@ def menu_add_book():
     try:
         year = int(input("Enter the published year: "))
     except ValueError:
-        print("Invalid year input. Operation canceled.")
+        print("Invalid year input. Canceled.")
         return
 
     genres_input = input("Enter the book genre (comma-separated): ").strip()
     genres = [g.strip() for g in genres_input.split(",")] if genres_input else []
     
     try:
-        book = add_book(
-            title=title, 
-            isbn=isbn, 
-            author_ids=[author_id], 
-            year_published=year, 
-            genre_names=genres
-        )
+        book = add_book(title=title, isbn=isbn, author_id=author_id, published_year=year, genre_names=genres)
         print(f"'{book.title}' has been added.")
     except Exception as e:
         print(f"Failed to add book: {e}")
 
 def menu_add_borrower():
-    """Prompt for borrower details and register in the database."""
     name = input("Please enter your name: ").strip()
     email = input("Please enter your email address: ").strip()
     phone = input("Please enter your phone: ").strip()
@@ -59,7 +51,6 @@ def menu_add_borrower():
         print(f"Failed to add member: {e}")
 
 def menu_checkout():
-    """Prompt for book ID and borrower ID, then check out the book."""
     available_books = get_available_books()
     if not available_books:
         print("No books are currently available for checkout.")
@@ -77,7 +68,6 @@ def menu_checkout():
         print(f"Checkout failed: {e}")
 
 def menu_return():
-    """Prompt for checkout ID and return the book."""
     try:
         checkout_id = int(input("Please enter the checkout ID: "))
         results = return_book(checkout_id=checkout_id)
@@ -86,7 +76,6 @@ def menu_return():
         print(f"Error returning book: {e}")
 
 def menu_search_by_title():
-    """Prompt for title search string and display matching books."""
     title_search = input("Please enter a title to search for: ").strip()
     results = search_books_by_title(title_search)
     if not results: 
@@ -96,7 +85,6 @@ def menu_search_by_title():
             print(f"- {title}")
 
 def menu_member_borrowings():
-    """Display all books currently checked out by a member."""
     try: 
         member_id = int(input("Please enter the member ID: "))
     except ValueError: 
@@ -108,14 +96,17 @@ def menu_member_borrowings():
         print("No active borrowings found for this member.")
     else:
         for result in results: 
-            print(f"Checkout ID: {result.id} | Book ID: {result.book_id} | Due date: {result.due_date}")
+            print(f"Checkout ID: {result['id']} | Book ID: {result['book_id']} | Due date: {result['due_date']}")
 
 def menu_update_member_email(): 
     try: 
         member_id = int(input("Enter Member ID: "))
         new_email = input("Enter new email: ").strip()
         updated = update_member_email(member_id, new_email)
-        print(f"Updated email for {updated.name}: {updated.email}")
+        if updated:
+            print(f"Updated email for {updated.name}: {updated.email}")
+        else:
+            print("Member not found.")
     except ValueError as e: 
         print(f"Update failed: {e}")
 
@@ -140,32 +131,29 @@ def menu_delete_member():
         print("Invalid ID.")
 
 def menu_search_by_author():
-    """Prompt for author name and display matching books."""
     author_name = input("Please enter the author's name: ").strip()
     results = find_books_by_author(author_name=author_name)
     if not results: 
         print("No books found for that author.")
     else: 
         for book in results: 
-            print(f"- {book.title}")
+            print(f"- ID {book['id']}: {book['title']}")
 
 def menu_overdue():
-    """Display all overdue checkouts."""
     results = get_overdue_books()
     if not results: 
         print("No books are currently overdue.")
     else:
         for result in results: 
-            print(f"Checkout ID: {result.id} | Book ID: {result.book_id} | Member ID: {result.member_id} | Due: {result.due_date}")
+            print(f"Checkout ID: {result['id']} | Book ID: {result['book_id']} | Member ID: {result['member_id']} | Due: {result['due_date']}")
 
 def menu_popular_genres():
-    """Display the most popular genres by checkout count."""
     results = get_popular_genres()
     if not results: 
         print("No genre statistics available yet.")
     else:
         for genre in results: 
-            print(f"Genre: {genre.name}")
+            print(f"Genre: {genre['name']}")
 
 def main():
     init_db()
