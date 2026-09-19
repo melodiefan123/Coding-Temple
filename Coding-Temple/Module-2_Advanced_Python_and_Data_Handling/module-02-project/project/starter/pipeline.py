@@ -1,7 +1,6 @@
 """
-pipeline.py — Module 2 Project Starter
-Your job: implement each method in the DataPipeline class below.
-The docstrings describe exactly what each method should do.
+pipeline.py — Module 2 Project Implementation
+A data processing pipeline for employee survey data.
 """
 
 import pandas as pd
@@ -11,16 +10,16 @@ import matplotlib.pyplot as plt
 
 matplotlib.use("Agg")  # Ensure headless environment compatibility
 
+
 class DataPipeline:
     """
     A data processing pipeline for employee survey data.
 
-    Usage (once implemented):
+    Usage:
         pipeline = DataPipeline("data/messy_employee_survey.csv")
         results = pipeline.run()
     """
 
-    # Canonical spellings for normalization — use these dicts in your clean() method.
     DEPT_MAP = {
         "engineering": "Engineering",
         "eng":         "Engineering",
@@ -49,16 +48,7 @@ class DataPipeline:
     }
 
     def __init__(self, filepath):
-        """Load the CSV at `filepath` into self.df (a pandas DataFrame).
-        Print how many rows and columns were loaded.
-
-        Hint: use pd.read_csv()
-        Wrap the load in try/except to catch FileNotFoundError.
-
-        Args:
-            filepath: path to the messy CSV file
-        """
-        # TODO: implement __init__
+        """Load the CSV at `filepath` into self.df (a pandas DataFrame)."""
         self.filepath = filepath
         self.df = None
 
@@ -68,33 +58,30 @@ class DataPipeline:
         except FileNotFoundError:
             print(f"Error: Raw data file not found at {filepath}.")
             self.df = pd.DataFrame()
-        except Exception as e: 
+        except Exception as e:
             print(f"Unexpected error loading file: {e}")
             self.df = pd.DataFrame()
 
-
-    def _parse_salary(self, val): 
+    def _parse_salary(self, val):
         if pd.isna(val):
             return None
-        
+
         pattern = re.sub(r"[$,]", "", str(val)).strip()
 
         try:
-            if float(pattern) >= 0: 
-                return float(pattern)
-            else: 
-                return None
-        except ValueError: 
+            sal_float = float(pattern)
+            return sal_float if sal_float >= 0 else None
+        except ValueError:
             return None
-        
+
     def _parse_date(self, val):
         if pd.isna(val):
             return None
-        
+
         formats = ["%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y"]
-        for format in formats: 
-            try: 
-                return pd.to_datetime(val, format = format)
+        for fmt in formats:
+            try:
+                return pd.to_datetime(val, format=fmt)
             except Exception:
                 pass
         try:
@@ -103,70 +90,60 @@ class DataPipeline:
             return None
 
     def clean(self):
-        """Clean the DataFrame stored in self.df and print a summary.
-
-        Steps to implement (in order):
-        1. Remove rows with duplicate employee_id (keep first occurrence).
-           Hint: df.drop_duplicates(subset=["employee_id"], keep="first")
-
-        2. Standardize 'name' — strip whitespace, title case.
-           Hint: df["name"].str.strip().str.title()
-
-        3. Normalize 'department' — map messy variants to canonical names.
-           Hint: df["department"].str.strip().str.lower().map(self.DEPT_MAP)
-
-        4. Normalize 'office_location' — same pattern as department.
-           Hint: use self.LOC_MAP
-
-        5. Convert 'salary' to float — strip "$" and "," first, set negatives to None.
-           Hint: write a helper function and use df["salary"].apply(helper)
-                 import re; re.sub(r"[$,]", "", str(val)) strips the symbols
-
-        6. Convert 'years_experience' to numeric; set values > 50 to None (outliers).
-           Hint: pd.to_numeric(..., errors="coerce")
-
-        7. Convert 'satisfaction_score' to numeric; set values outside 1–10 to None.
-
-        8. Parse 'survey_date' — multiple formats exist (MM/DD/YYYY, YYYY-MM-DD, DD-MM-YYYY).
-           Hint: write a helper that tries pd.to_datetime(val, format=fmt) for each format.
-                 Formats to try: "%m/%d/%Y", "%Y-%m-%d", "%d-%m-%Y"
-
-        After all steps, reassign self.df = df and print a missing-values summary.
-
-        Returns self so calls can be chained: pipeline.clean().analyze()
-        """
-        # TODO: implement clean()
+        """Clean the DataFrame stored in self.df and print a summary."""
         if self.df is None or self.df.empty:
             print("Cleaning skipped: DataFrame is empty.")
             return self
 
-        initial_tows = len(self.df)
-        self.df = self.df.drop_duplicates(subset=["employee_id"], keep="first")
-        dup_count = initial_tows - len(self.df)
+        initial_rows = len(self.df)
+        self.df = self.df.drop_duplicates(subset=["employee_id"], keep="first").copy()
+        dup_count = initial_rows - len(self.df)
 
-        self.df["name"] = self.df["name"].apply(
-            lambda x: str(x).strip().title() if pd.notna(x) else x
-        )
-        self.df["department"] = self.df["department"].apply(
-            lambda x: self.DEPT_MAP.get(str(x).strip().lower(), x) if pd.notna(x) else None
-        )
-        self.df["office_location"] = self.df["office_location"].apply(
-            lambda x: self.LOC_MAP.get(str(x).strip().lower(), None) if pd.notna(x) else x
-        )
+        # 2. Standardize 'name' cleanly without index misalignment
+        if "name" in self.df.columns:
+            self.df["name"] = self.df["name"].astype(str).str.strip().str.title()
+            self.df["name"] = self.df["name"].replace({"Nan": None, "None": None, "": None})
 
-        
+        # 3. Normalize department: map known aliases, title-case unmapped values
+        if "department" in self.df.columns:
+            dept_lower = self.df["department"].astype(str).str.strip().str.lower()
+            # Replace known aliases
+            dept_mapped = dept_lower.replace(self.DEPT_MAP)
+            # Title-case any valid departments that weren't in DEPT_MAP keys
+            unmapped_mask = ~dept_lower.isin(self.DEPT_MAP.keys())
+            dept_mapped[unmapped_mask] = dept_mapped[unmapped_mask].str.title()
+            
+            self.df["department"] = dept_mapped.replace({"Nan": None, "None": None, "": None})
+
+        # 4. Normalize office location similarly
+        if "office_location" in self.df.columns:
+            loc_lower = self.df["office_location"].astype(str).str.strip().str.lower()
+            loc_mapped = loc_lower.replace(self.LOC_MAP)
+            unmapped_loc = ~loc_lower.isin(self.LOC_MAP.keys())
+            loc_mapped[unmapped_loc] = loc_mapped[unmapped_loc].str.title()
+
+            self.df["office_location"] = loc_mapped.replace({"Nan": None, "None": None, "": None})
+
+        # 5. Salary parsing
         sal_nulls_before = self.df["salary"].isna().sum()
         self.df["salary"] = self.df["salary"].apply(self._parse_salary)
         invalid_salaries = self.df["salary"].isna().sum() - sal_nulls_before
-        
+
+        # 6. Experience validation
         self.df["years_experience"] = pd.to_numeric(self.df["years_experience"], errors="coerce")
         invalid_exp = ((self.df["years_experience"] < 0) | (self.df["years_experience"] > 50)).sum()
-        self.df["years_experience"] = self.df["years_experience"].where((self.df["years_experience"] >= 0) & (self.df["years_experience"]<=50) , other=None)
+        self.df["years_experience"] = self.df["years_experience"].where(
+            (self.df["years_experience"] >= 0) & (self.df["years_experience"] <= 50), other=None
+        )
 
+        # 7. Satisfaction score validation
         self.df["satisfaction_score"] = pd.to_numeric(self.df["satisfaction_score"], errors="coerce")
         invalid_sat = ((self.df["satisfaction_score"] < 1) | (self.df["satisfaction_score"] > 10)).sum()
-        self.df["satisfaction_score"] = self.df["satisfaction_score"].where((self.df["satisfaction_score"] >= 1) & (self.df["satisfaction_score"] <= 10), other=None)
+        self.df["satisfaction_score"] = self.df["satisfaction_score"].where(
+            (self.df["satisfaction_score"] >= 1) & (self.df["satisfaction_score"] <= 10), other=None
+        )
 
+        # 8. Date parsing
         self.df["survey_date"] = self.df["survey_date"].apply(self._parse_date)
 
         print("\n" + "=" * 40)
@@ -177,140 +154,111 @@ class DataPipeline:
         print(f"• Reset {invalid_exp} experience values exceeding 50 years.")
         print(f"• Reset {invalid_sat} satisfaction scores outside 1–10.")
         print(f"• Total remaining null values across dataset: {self.df.isnull().sum().sum()}\n")
+
         return self
 
-
-
-
     def analyze(self):
-        """Compute summary statistics from the cleaned self.df.
-
-        Compute and print:
-        1. Average salary by department
-           Hint: df.groupby("department")["salary"].mean().round(0)
-
-        2. Average satisfaction score by department
-
-        3. Headcount by office location
-           Hint: df["office_location"].value_counts()
-
-        4. Pearson correlation between years_experience and salary
-           Hint: drop rows where either is NaN, then Series.corr()
-
-        5. One additional insight of your choice (e.g., satisfaction by location)
-
-        Return a dict with all results so main.py can use them.
-        Keys to use: "avg_salary_by_dept", "avg_satisfaction_by_dept",
-                     "headcount_by_location", "experience_salary_correlation",
-                     "avg_satisfaction_by_location"
-        """
-        # TODO: implement analyze()
-
+        """Compute summary statistics from the cleaned self.df."""
         if self.df is None or self.df.empty:
             print("Analysis skipped: DataFrame is empty.")
             return {}
-        
+
         avg_salary_by_dept = self.df.groupby("department")["salary"].mean().round(0)
         avg_satisfaction_by_dept = self.df.groupby("department")["satisfaction_score"].mean().round(1)
         headcount_by_location = self.df["office_location"].value_counts()
         avg_satisfaction_by_location = self.df.groupby("office_location")["satisfaction_score"].mean().round(1)
+
         clean_df = self.df[["years_experience", "salary"]].dropna()
-        experience_salary_correlation = clean_df["years_experience"].corr(clean_df["salary"])
+        experience_salary_correlation = round(clean_df["years_experience"].corr(clean_df["salary"]), 3)
+
+        print("=" * 40)
+        print("ANALYSIS RESULTS")
+        print("=" * 40)
+        print("\n1. Average Salary by Department:")
+        print(avg_salary_by_dept.to_string())
+        print("\n2. Average Satisfaction by Department:")
+        print(avg_satisfaction_by_dept.to_string())
+        print("\n3. Headcount by Office Location:")
+        print(headcount_by_location.to_string())
+        print(f"\n4. Pearson Correlation (Experience vs Salary): {experience_salary_correlation}")
+        print("\n5. Average Satisfaction by Office Location:")
+        print(avg_satisfaction_by_location.to_string())
+        print("=" * 40 + "\n")
+
         return {
             "avg_salary_by_dept": avg_salary_by_dept,
             "avg_satisfaction_by_dept": avg_satisfaction_by_dept,
-            "headcount_by_location": headcount_by_location, 
+            "headcount_by_location": headcount_by_location,
             "experience_salary_correlation": experience_salary_correlation,
-            "avg_satisfaction_by_location": avg_satisfaction_by_location}
-        
+            "avg_satisfaction_by_location": avg_satisfaction_by_location,
+        }
 
     def visualize(self, output_path="output/charts.png"):
-        """Create and save visualizations to `output_path`.
-
-        Required charts:
-        - Bar chart: average salary by department
-        - Histogram: satisfaction score distribution (bins 1–10)
-        Bonus:
-        - Horizontal bar: headcount by office location
-
-        Use matplotlib with plt.subplots() for a multi-chart layout.
-        Save with plt.savefig(output_path, dpi=120, bbox_inches="tight").
-        Call plt.close() after saving.
-
-        Hint: import matplotlib; matplotlib.use("Agg") at top of file
-              prevents errors when no display is available.
-
-        Args:
-            output_path: where to save the PNG file
-        """
-        # TODO: implement visualize()
+        """Create and save visualizations to `output_path`."""
         if self.df is None or self.df.empty:
             print("Visualization skipped: DataFrame is empty.")
             return
-        
-        try: 
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-            fig, (ax1, ax2) = plt.subplots(1,2, figsize = (14,5))
+        try:
+            dir_name = os.path.dirname(output_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
+
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
 
             avg_salary = self.df.groupby("department")["salary"].mean()
             satisfaction_score = self.df["satisfaction_score"]
-            #bar
-            ax1.bar(avg_salary.index, avg_salary.values)
-            ax1.set_title("Average Salary by Department")
-            ax1.set_xlabel("Departments")
-            ax1.set_ylabel("Average Salary")
 
-            #Histogram 
-            ax2.hist(satisfaction_score.dropna(), bins = list(range(1,12)))
+            # Bar Chart
+            ax1.bar(avg_salary.index, avg_salary.values, color="skyblue", edgecolor="black")
+            ax1.set_title("Average Salary by Department")
+            ax1.set_xlabel("Department")
+            ax1.set_ylabel("Average Salary ($)")
+
+            # Histogram
+            ax2.hist(satisfaction_score.dropna(), bins=[i - 0.5 for i in range(1, 12)], rwidth=0.8, color="teal", edgecolor="black")
             ax2.set_title("Satisfaction Score Distribution")
             ax2.set_xlabel("Satisfaction Score")
-            ax2.set_ylabel("Distribution(1-10)")
+            ax2.set_ylabel("Frequency")
 
             plt.tight_layout()
-            plt.savefig(output_path, dpi=150)
+            plt.savefig(output_path, dpi=120, bbox_inches="tight")
             plt.close()
-        except FileNotFoundError:
-            return None
-        except Exception as e: 
+            print(f"Visualizations saved to {output_path}")
+        except Exception as e:
             print(f"Error generating visualizations: {e}")
-        
 
     def export(self, output_path="output/clean_data.csv"):
-        """Save the cleaned self.df to a CSV at `output_path`.
-
-        Create the output directory if it doesn't exist.
-        Wrap in try/except.
-
-        Hint: df.to_csv(output_path, index=False)
-
-        Args:
-            output_path: path for the exported CSV
-        """
-        # TODO: implement export()
+        """Save the cleaned self.df to a CSV at `output_path`."""
         if self.df is None or self.df.empty:
             print("Export skipped: DataFrame is empty.")
             return
-        
+
         try:
-            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            dir_name = os.path.dirname(output_path)
+            if dir_name:
+                os.makedirs(dir_name, exist_ok=True)
             self.df.to_csv(output_path, index=False)
             print(f"Cleaned data exported to {output_path}")
         except Exception as e:
             print(f"Error exporting data: {e}")
 
     def run(self):
-        """Execute the full pipeline: clean → analyze → visualize → export.
+        """Execute the full pipeline: clean → analyze → visualize → export."""
+        try:
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+        except NameError:
+            base_dir = os.getcwd()
 
-        Build output paths using os.path.join(os.path.dirname(__file__), "output", ...).
-        Return the results dict from analyze().
-        """
-        # TODO: call each method in order and return results
-        try: 
+        chart_path = os.path.join(base_dir, "output", "charts.png")
+        csv_path = os.path.join(base_dir, "output", "clean_data.csv")
+
+        try:
             self.clean()
-            data_analysis = self.analyze()
-            self.visualize(os.path.join(os.path.dirname(__file__), "output", "charts.png"))
-            self.export(os.path.join(os.path.dirname(__file__), "output", "clean_data.csv"))
-            return data_analysis
+            results = self.analyze()
+            self.visualize(chart_path)
+            self.export(csv_path)
+            return results
         except Exception as e:
+            print(f"Pipeline execution failed: {e}")
             return None
