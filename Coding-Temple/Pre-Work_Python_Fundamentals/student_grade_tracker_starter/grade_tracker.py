@@ -156,15 +156,6 @@ def generate_report(students: list[dict]) -> dict:
     student_summaries = []
     all_averages = []
 
-    if total_students == 0:
-        return {
-            "total_students": 0,
-            "class_average": None,
-            "highest_average": None,
-            "lowest_average": None,
-            "grade_distribution": grade_distribution,
-            "students": []
-        }
     for student in students: 
         subjects = ['math', 'science', 'english', 'history']
         grades = [student.get(sub) for sub in subjects]
@@ -173,7 +164,7 @@ def generate_report(students: list[dict]) -> dict:
         letter_grade = get_letter_grade(average)
 
         student_summary = {
-            "name": student['student_name'],
+            "name": student.get('student_name', 'Unknown'),
             "average": average,
             "grade": letter_grade
         }
