@@ -1,9 +1,13 @@
-# BadRequestException — for invalid business logic (400), e.g., trying to delete an active user
+
 class AppException(Exception):
     def __init__(self, detail: str, status_code: int = 400):
         self.detail = detail
         self.status_code = status_code
         super().__init__(detail)
+# BadRequestException — for invalid business logic (400), e.g., trying to delete an active user
+class BadRequestException(AppException):
+    def __init__(self, detail: str):
+        super().__init__(detail=detail, status_code=400)
 
 # NotFoundException — for missing resources (404)
 class NotFoundException(AppException):

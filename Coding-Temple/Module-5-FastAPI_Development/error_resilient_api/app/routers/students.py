@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.models.student import Student
-from app.schemas.student import StudentCreate, StudentResponse, StudentUpdate, StudentPatch
+from app.schemas.student_schema import StudentCreate, StudentResponse, StudentUpdate, StudentPatch
 from typing import Optional
-from app.utils.exceptions import DuplicateException, NotFoundException, AppException
+from app.utils.exceptions import DuplicateException, NotFoundException, BadRequestException
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -81,6 +81,6 @@ def patch_student(student_id: int, student: StudentPatch, db: Session = Depends(
 def delete_student(student_id: int, db: Session = Depends(get_db)):
     student = get_student_or_404(student_id, db)
     if student.is_enrolled:
-        raise AppException( detail="Cannot delete an enrolled student")
+        raise BadRequestException( detail="Cannot delete an enrolled student")
     db.delete(student)
     db.commit()
