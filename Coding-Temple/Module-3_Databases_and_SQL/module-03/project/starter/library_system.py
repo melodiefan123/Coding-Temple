@@ -95,7 +95,7 @@ def add_author(name: str, bio: str = None):
         session.expunge(new_author)
         return new_author
 
-def add_book(title: str, isbn: str, author_ids: list[int] | int, year_published: int = None, genre_names: list = None):
+def add_book(title: str, isbn: str, author_ids: list[int] | int, published_year: int = None, genre_names: list = None, available_copies: int = 1):
     with Session(engine) as session: 
         if isinstance(author_ids, int):
             author_ids = [author_ids]
@@ -113,8 +113,10 @@ def add_book(title: str, isbn: str, author_ids: list[int] | int, year_published:
             title=title, 
             isbn=str(isbn), 
             author=authors, 
-            published_year=year_published, 
-            genre=genres
+            published_year=published_year, 
+            genre=genres,
+            available_copies=available_copies,
+            available=available_copies > 0
         )
         session.add(new_book)
         session.commit()
@@ -134,14 +136,22 @@ def add_member(name: str, email: str, phone: str = None):
 def checkout_book(book_id: int, member_id: int, days: int = 14):
     with Session(engine) as session: 
         book = session.query(Book).filter(Book.id == book_id).first()
-        if book and book.available: 
+        member = session.query(Member).filter(Member.id == member_id).first()
+
+        if not member: 
+            raise ValueError("Member does not exist")
+        
+        if book and book.available_copies > 0: 
             checkout_object = Checkout(
                 book_id=book_id,
                 member_id=member_id,
                 checkout_date=date.today(),
                 due_date=date.today() + timedelta(days=days)
             )
-            book.available = False
+            book.available_copies -= 1
+            if book.available_copies == 0:
+                book.available = False
+
             session.add(checkout_object)
             session.commit()
             session.refresh(checkout_object)
@@ -155,10 +165,15 @@ def return_book(checkout_id: int):
         checkout = session.query(Checkout).filter(Checkout.id == checkout_id).first()
         if not checkout:
             raise ValueError("Invalid checkout ID")
+        if checkout.return_date is not None: 
+            raise ValueError("Book has already been returned.")
+        
         checkout.return_date = date.today()
         book = session.query(Book).filter(Book.id == checkout.book_id).first()
         if book:
+            book.available_copies += 1
             book.available = True
+
         session.commit()
         session.refresh(checkout)
         session.expunge_all()
@@ -168,10 +183,17 @@ def return_book(checkout_id: int):
 # QUERY FUNCTIONS
 # ============================================================
 
+def get_all_books() -> list: 
+    with Session(engine) as session: 
+        books = session.query(Book).options(joinedload(Book.author)).all()
+        session.expunge_all()
+        return books
+    
 def search_books_by_title(title: str) -> list:
     with Session(engine) as session:
-        books = session.query(Book).filter(Book.title.ilike(f"%{title}%")).all()
-        return [b.title for b in books]
+        books = session.query(Book).options(joinedload(Book.author)).filter(Book.title.ilike(f"%{title}%")).all()
+        session.expunge_all()
+        return books
 
 def find_books_by_author(author_name: str) -> list:
     with Session(engine) as session: 
@@ -181,24 +203,32 @@ def find_books_by_author(author_name: str) -> list:
 
 def get_overdue_books() -> list:
     with Session(engine) as session: 
-        checkouts = session.query(Checkout).filter(Checkout.return_date == None, Checkout.due_date < date.today()).all()
+        checkouts = session.query(Checkout).options(
+            joinedload(Checkout.books),
+            joinedload(Checkout.members)
+        ).filter(Checkout.return_date == None, Checkout.due_date < date.today()).all()
         session.expunge_all()
         return checkouts
 
 def get_popular_genres(limit: int = 3) -> list:
     with Session(engine) as session: 
-        results = session.query(Genre).join(book_genres).join(Book).join(Checkout).group_by(Genre.id).order_by(func.count(Checkout.id).desc()).limit(limit).all()
-        session.expunge_all()
-        return results
+        results = session.query(Genre.name, func.count(Checkout.id).label("count"))\
+            .join(book_genres).join(Book).join(Checkout)\
+            .group_by(Genre.id)\
+            .order_by(func.count(Checkout.id).desc())\
+            .limit(limit).all()
+        return [{"name": name, "count": count} for name, count in results]
 
 def get_available_books() -> list:
     with Session(engine) as session:
-        books = session.query(Book).filter_by(available=True).all()
-        return [{"id": b.id, "title": b.title} for b in books]
+        books = session.query(Book).filter(Book.available_copies > 0).all()
+        return [{"id": b.id, "title": b.title, "copies": b.available_copies} for b in books]
 
 def list_member_borrowings(member_id: int) -> list:
     with Session(engine) as session: 
-        checkouts = session.query(Checkout).filter(Checkout.member_id == member_id, Checkout.return_date == None).all()
+        checkouts = session.query(Checkout).options(
+            joinedload(Checkout.books)
+        ).filter(Checkout.member_id == member_id, Checkout.return_date == None).all()
         session.expunge_all()
         return checkouts
 
