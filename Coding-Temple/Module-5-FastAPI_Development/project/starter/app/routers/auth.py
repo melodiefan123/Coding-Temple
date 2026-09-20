@@ -37,7 +37,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
 
 
 # TODO: POST /token
-@router.post("/token", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Allows login if user exists"""
     user = db.query(User).filter(

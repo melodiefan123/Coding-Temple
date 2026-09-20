@@ -24,7 +24,7 @@ class TestAuth:
 # - test_login
     def test_login(self, auth_headers):
         client = auth_headers[1]
-        response = client.post("auth/token", data={
+        response = client.post("/auth/login", data={
             "username": "test1@email.com",
             "password": "testpassword"
         })
@@ -65,7 +65,7 @@ def test_get_task_suggest(auth_headers, sample_task):
 # - test_invalid_email
 def test_invalid_password(auth_headers):
         client = auth_headers[1]
-        response = client.post("auth/token", data={
+        response = client.post("auth/login", data={
             "username": "test1@email.com",
             "password": "testpassword234"
         })

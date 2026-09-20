@@ -18,7 +18,7 @@ class UserResponse(BaseModel):
     """Returned to clients — no password fields."""
      # TODO: id, username, email + model_config
     id: int
-    username: str
+    name: str
     email: str
     model_config = ConfigDict(from_attributes=True)
 
