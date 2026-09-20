@@ -43,6 +43,7 @@ def explore_jsonplaceholder():
     # TODO 2: GET posts by a specific user
     # Endpoint: GET /posts?userId=<number>
     # Print the count and first post title
+    # REST CONCEPT COMMENT 1: Query Parameters (?userId=3) filter a resource collection on the server without changing the endpoint path.
     print("\n--- GET /posts?userId=3 ---")
     try: 
         user_3_posts = requests.get(f"{BASE_URLS['jsonplaceholder']}/posts", params={"userId": 3})
@@ -70,7 +71,7 @@ def explore_jsonplaceholder():
         }
         response = requests.post(f"{BASE_URLS['jsonplaceholder']}/posts", json=new_post)
         print(f"Created Status: {response.status_code}")
-        #201 Created is the expected status code for a successful POST that creates a resource
+        #REST CONCEPT COMMENT 2: 201 Created is the expected status code for a successful POST that creates a resource
         print(f"Created post with id: {response.json().get('id')}")
         print(f"Method: {response.request.method} URL: {response.request.url}")
         print(f"Key Headers: {response.headers['Content-Type']}")
@@ -174,7 +175,8 @@ def explore_restcountries():
     print("\n--- GET /name/InvalidCountry ---")
     try:
         invalid_response = requests.get(f"{BASE_URLS['restcountries']}/name/InvalidCountry")
-        if invalid_response.status_code == 404: # 404 Not Found is the expected status code when a resource is not found
+        if invalid_response.status_code == 404: 
+            # REST CONCEPT COMMENT 3: 404 Not Found is the expected status code when a resource is not found
             print("Country not found. Please check the name and try again.")
         else:
             print(f"Unexpected error: {invalid_response.status_code} {invalid_response.reason}")
