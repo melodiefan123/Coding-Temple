@@ -90,11 +90,15 @@ A command-line library management system backed by SQLAlchemy. You'll implement:
 
 ## Schema Details
 
-- **Author**: id, name, bio (optional)
-- **Genre**: id, name (unique)
-- **Book**: id, title, isbn (unique), published_year, available (bool), available_copies. Many-to-many with Author and Genre.
-- **Member**: id, name, email (unique), phone (optional), membership_date
-- **Checkout**: id, book_id (FK), member_id (FK), checkout_date, due_date, return_date (NULL if active)
+## Schema Details
+
+- **Author**: `id` (PK), `name`, `bio` (optional)[cite: 10]
+- **Genre**: `id` (PK), `name` (unique)[cite: 10]
+- **Book**: `id` (PK), `title`, `isbn` (unique), `published_year` (optional), `available` (bool), `available_copies` (int). Many-to-many relationship with `Author` (`book_author`) and `Genre` (`book_genres`).[cite: 10]
+- **Member**: `id` (PK), `name`, `email` (unique), `phone` (optional), `membership_date`[cite: 10]
+- **Checkout**: `id` (PK), `book_id` (FK -> `books.id`), `member_id` (FK -> `members.id`), `checkout_date`, `due_date`, `return_date` (NULL if currently active/borrowed)[cite: 10]
+- **book_author** (Association Table): `author_id` (PK, FK -> `authors.id`), `book_id` (PK, FK -> `books.id`)[cite: 10]
+- **book_genres** (Association Table): `book_id` (PK, FK -> `books.id`), `genre_id` (PK, FK -> `genres.id`)[cite: 10]
 
 ## File Overview
 
