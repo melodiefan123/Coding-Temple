@@ -22,8 +22,9 @@ with st.sidebar:
     stats = get_collection_stats()
     selected_sources = st.multiselect("Filter by source", options=stats["source_names"])
     if st.button("🔄 Re-index Documents"):
-        ingest_func = ingest(DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP)
+        ingest(DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP)
         st.success("Documents re-indexed successfully!")
+
     st.metric("Total Chunks",stats["total_chunks"])
     st.metric("Unique Sources", stats["unique_sources"])
     st.divider()
@@ -44,12 +45,12 @@ if query and stats["total_chunks"] > 0:
         sources = selected_sources or None ,
         distance_threshold = distance_threshold)
     for result in results: 
-        with st.expander(f"e.g. 📄 filename — chunk index (score: int)"):
-            st.write(f"{result["text"]}- chunk{result["chunk_index"]} (score: {result["score"]})")
-            st.write(result['source'])
-            st.write(result['distance'])
+        label = f"📄 {result['source']} — Chunk {result['chunk_index']} (Score: {result['score']:.2f})"
+        with st.expander(label):
+            st.write(result["text"])
+            st.caption(f"Distance: {result['distance']:.4f}")
     if not results: 
-        st.error("The results are empty")
+        st.error("No matching results found within the distance threshold.")
 
     
 
