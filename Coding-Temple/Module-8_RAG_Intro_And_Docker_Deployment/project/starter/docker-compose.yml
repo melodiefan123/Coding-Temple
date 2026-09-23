@@ -30,7 +30,7 @@ services:
       - .env
     # TODO: Add a named volume for ChromaDB persistence
     volumes:
-      - chroma_data:/app/rag_db
+      - chroma_data:/app/chroma_data
     # TODO: Make backend depend on ollama so it starts in the right order
     depends_on:
       - ollama

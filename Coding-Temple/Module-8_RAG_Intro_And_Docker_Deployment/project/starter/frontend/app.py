@@ -64,7 +64,7 @@ with st.sidebar:
             health_data = health_response.json()
             chroma_status = health_data.get("chromadb", "unknown")
             ollama_status = health_data.get("ollama", "unknown")
-            doc_count = health_data.get("document_count", "unknown")
+            doc_count = health_data.get("documents", "unknown")
             st.caption(f"Chroma_status: {chroma_status} | Ollama_status: {ollama_status} | Documents: {doc_count}")
         else:
             st.error(f"Backend error: {health_response.status_code}")
@@ -116,7 +116,8 @@ for msg in st.session_state.chat_history:
             if sources:
                 with st.expander("Sources"):
                     for src in sources:
-                        st.markdown(f"- {src}")
+                        source_name = src.get("source", "Unknown") if isinstance(src, dict) else src
+                        st.markdown(f"- **{source_name}**")
 
 # ── Chat input ─────────────────────────────────────────────────────────────
 # TODO: Use st.chat_input("Ask a question...") to get user input.

@@ -15,8 +15,8 @@ Required endpoints:
     GET  /stats     → document count, model name, db path
     GET  /health    → ChromaDB status, Ollama connectivity, document count
 """
-
-from fastapi import FastAPI, HTTPException, requests
+import requests
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 from config import settings
