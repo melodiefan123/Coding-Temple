@@ -11,7 +11,7 @@ app = FastAPI(title="LedgeAI API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or explicitly ["http://localhost:8501"]
+    allow_origins=["http://localhost:8501", "http://localhost:8502"],  # Or explicitly ["http://localhost:8501"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

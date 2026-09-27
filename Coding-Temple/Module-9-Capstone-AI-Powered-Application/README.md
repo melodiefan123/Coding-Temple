@@ -42,15 +42,21 @@ An intelligent financial assistant and budget tracker that automates invoice gen
 
 All endpoints (except authentication) require a valid JSON Web Token (JWT) sent in the HTTP Request Authorization header: `Authorization: Bearer <JWT_TOKEN>`.
 
-| Method   | Endpoint             | Auth Required | Request Payload / Params                  | Response Summary                                                                                                                 |
-| :------- | :------------------- | :-----------: | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| **POST** | `/auth/token`        |     ❌ No     | Form Data: `username`, `password`         | Returns JWT access token and token type (`Bearer`).                                                                              |
-| **POST** | `/receipts/upload`   |    🔒 Yes     | Multipart Form: `file: UploadFile`        | Automatically processes OCR, extracts pricing/merchant, inserts into ChromaDB + SQLite, returns structured receipt JSON.         |
-| **POST** | `/invoices/generate` |    🔒 Yes     | JSON: `client_name`, `amount`, `due_date` | Generates a clean PDF invoice file, writes invoice record to DB, returns unique document identifiers.                            |
-| **GET**  | `/budget/status`     |    🔒 Yes     | _None_                                    | Calculates and returns: `gross_income_received`, `tax_withholding_reserve`, `total_expenses_logged`, and `safe_spending_budget`. |
-| **GET**  | `/documents`         |    🔒 Yes     | Query: `limit: int` (Optional)            | Returns a chronological feed stream of all receipt and invoice document metadata.                                                |
-
----
+| Method | Endpoint | Auth Required | Request Payload / Params | Response Summary |
+| :--- | :--- | :---: | :--- | :--- |
+| **POST** | `/auth/login` | ❌ No | Form Data: `username`, `password` | Returns `access_token` and token type. |
+| **POST** | `/auth/register` | ❌ No | JSON: `username`, `email`, `password` | Registers new user; returns confirmation or token. |
+| **GET** | `/budgets/` | 🔒 Yes | *None* | Fetches active user's budget allocations. |
+| **POST** | `/budgets` | 🔒 Yes | JSON: `category`, `monthly_limit` | Creates or updates budget allocation. |
+| **POST** | `/budgets/expenses` | 🔒 Yes | JSON: `description`, `category`, `amount`, `card_id` | Logs a new expense under a category/card. |
+| **GET** | `/income/` | 🔒 Yes | *None* | Fetches list of logged additional income items. |
+| **POST** | `/income/` | 🔒 Yes | JSON: `source`, `amount` | Logs an income or top-up transaction. |
+| **GET** | `/invoices/` | 🔒 Yes | *None* | Fetches all client invoices. |
+| **POST** | `/invoices/` | 🔒 Yes | JSON: `invoice_number`, `client_name`, `amount`, `status`, `issued_date`, `due_date`, `description` | Creates a new invoice record. |
+| **GET** | `/receipts/` | 🔒 Yes | *None* | Fetches processed receipt records. |
+| **POST** | `/receipts/upload` | 🔒 Yes | Multipart Form: `file`, `merchant_name`, `category`, `total_amount` | Uploads, parses, and indexes receipt into vector DB. |
+| **POST** | `/rag/index` | 🔒 Yes | Multipart Form: `file` | Indexes document into ChromaDB for vector search. |
+| **POST** | `/rag/query` | 🔒 Yes | JSON: `question` | Queries RAG pipeline and returns answer from context. |
 
 ## 3. System Architecture Diagram
 

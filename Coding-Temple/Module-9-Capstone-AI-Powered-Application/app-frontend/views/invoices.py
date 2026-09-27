@@ -1,19 +1,23 @@
 import streamlit as st
 import requests
 from datetime import date
+import os 
 
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="LedgeAI - Invoices", page_icon="📄", layout="wide")
 
 st.title("📄 Invoice Management")
 
 # Auth Check
-if "token" not in st.session_state or not st.session_state.token:
+user_token = st.session_state.get("token")
+if not user_token:
     st.warning("Please log in first from the Auth page.")
     st.stop()
 
-headers = {"Authorization": f"Bearer {st.session_state.token}"}
+headers = {"Authorization": f"Bearer {user_token}",
+           "Content-Type": "application/json"
+           }
 
 tab1, tab2 = st.tabs(["Create Invoice", "Invoice Ledger"])
 
@@ -38,56 +42,39 @@ with tab1:
         submitted = st.form_submit_button("Create Invoice", use_container_width=True)
         
         if submitted:
-            payload = {
-                "invoice_number": invoice_number,
-                "client_name": client_name,
-                "amount": amount,
-                "status": status,
-                "issued_date": str(issued_date),
-                "due_date": str(due_date),
-                "description": description
-            }
-            
-            res = requests.post(f"{API_URL}/invoices/", headers=headers, json=payload)
-            if res.status_code in (200, 201):
-                st.success("Invoice created successfully!")
-            else:
-                st.error(res.json().get("detail", "Failed to create invoice."))
+            if not client_name:
+                st.warning("Please enter a client name.")
+            else: 
+                payload = {
+                    "invoice_number": invoice_number,
+                    "client_name": client_name,
+                    "amount": amount,
+                    "status": status,
+                    "issued_date": str(issued_date),
+                    "due_date": str(due_date),
+                    "description": description
+                }
+                try: 
+                    res = requests.post(f"{API_URL}/invoices/", headers=headers, json=payload, timeout=10)
+                    if res.status_code in (200, 201):
+                        st.success("Invoice created successfully!")
+                    else:
+                        st.error(res.json().get("detail", "Failed to create invoice."))
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Could not connect to backend server: {e}")
 
 # ── Tab 2: Ledger Table ──
 with tab2:
     st.subheader("Active & Past Invoices")
-    
-    res = requests.get(f"{API_URL}/invoices/", headers=headers)
-    
-    if res.status_code == 200:
-        invoices = res.json()
-        if not invoices:
-            st.info("No invoices found.")
+    try: 
+        res = requests.get(f"{API_URL}/invoices/", headers=headers, timeout=10)
+        if res.status_code == 200:
+            invoices = res.json()
+            if invoices:
+                st.dataframe(invoices, use_container_width=True, hide_index=True)
+            else:
+                st.info("No invoices created yet.")
         else:
-            # Metrics Overview
-            total_billed = sum(i["amount"] for i in invoices)
-            total_pending = sum(i["amount"] for i in invoices if i["status"] == "pending")
-            
-            m1, m2 = st.columns(2)
-            m1.metric("Total Billed", f"${total_billed:,.2f}")
-            m2.metric("Outstanding Balance", f"${total_pending:,.2f}")
-            
-            st.divider()
-            
-            # Format table display
-            table_data = [
-                {
-                    "Invoice #": inv["invoice_number"],
-                    "Client": inv["client_name"],
-                    "Amount": f"${inv['amount']:,.2f}",
-                    "Status": inv["status"].upper(),
-                    "Due Date": inv["due_date"], 
-                    "Description": inv.get("description", "")
-                }
-                for inv in invoices
-            ]
-            
-            st.dataframe(table_data, use_container_width=True)
-    else:
-        st.error("Failed to fetch invoices.")
+            st.error(f"Failed to fetch invoices: {res.status_code}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Could not connect to backend server: {e}")

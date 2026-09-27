@@ -1,7 +1,8 @@
 import streamlit as st
 import requests
+import os 
 
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="LedgeAI - Auth", page_icon="🔐")
 
@@ -20,9 +21,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 # Session state initialization
 if "token" not in st.session_state:
-    st.session_state.token = None
+    st.session_state["token"] = None
 
-if st.session_state["token"]:
+user_token = st.session_state.get("token")
+
+if user_token:
     st.success("You are logged in!")
     if st.button("Log Out"):
         st.session_state["token"]= None
@@ -36,17 +39,21 @@ else:
         password = st.text_input("Password", type="password", key="login_pass")
         
         if st.button("Sign In"):
-            response = requests.post(
-                f"{API_URL}/auth/login",
-                data={"username": username, "password": password}
-            )
-            if response.status_code == 200:
-                data = response.json()
-                st.session_state.token = data["access_token"]
-                st.success("Logged in successfully!")
-                st.rerun()
-            else:
-                st.error(response.json().get("detail", "Login failed."))
+            try: 
+                response = requests.post(
+                    f"{API_URL}/auth/login",
+                    data={"username": username, "password": password},
+                    timeout=10
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    st.session_state["token"] = data.get("access_token")
+                    st.success("Logged in successfully!")
+                    st.rerun()
+                else:
+                    st.error(response.json().get("detail", "Login failed."))
+            except requests.exceptions.RequestException as e:
+                st.error(f"Could not connect to backend server: {e}")
 
     with tab2:
         st.subheader("Create an Account")

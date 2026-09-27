@@ -1,18 +1,21 @@
 import streamlit as st
 import requests
+import os 
+from datetime import date
 
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="LedgeAI - Receipts", page_icon="🧾", layout="wide")
 
 st.title("🧾 Receipt Management")
 
 # Auth Check
-if "token" not in st.session_state or not st.session_state.token:
-    st.warning("Please log in first from the Auth page.")
+user_token = st.session_state.get("token")
+if not user_token:
+    st.warning("Please log in on the Authentication page to access receipts.")
     st.stop()
 
-headers = {"Authorization": f"Bearer {st.session_state.token}"}
+headers = {"Authorization": f"Bearer {user_token}"}
 
 tab1, tab2 = st.tabs(["Upload & Process Receipt", "All Receipts"])
 
@@ -44,12 +47,15 @@ with tab1:
                     }
             
             # Send to FastAPI Upload Endpoint
-            res = requests.post(f"{API_URL}/receipts/upload", headers=headers, files=files, data=data)
-            
-            if res.status_code in (200, 201):
-                st.success("Receipt successfully processed and stored!")
-            else:
-                st.error(res.json().get("detail", "Upload failed."))
+            try: 
+                res = requests.post(f"{API_URL}/receipts/upload", headers=headers, files=files, data=data, timeout=15)
+                
+                if res.status_code in (200, 201):
+                    st.success("Receipt successfully processed and stored!")
+                else:
+                    st.error(res.json().get("detail", "Upload failed."))
+            except requests.exceptions.RequestException as e: 
+                st.error(f"Could not connect to backend server: {e}")
 
 # ── Tab 2: Gallery / List ──
 with tab2:
@@ -57,23 +63,16 @@ with tab2:
     
     if st.button("🔄 Refresh Receipts"):
         st.rerun()
-
-    res = requests.get(f"{API_URL}/receipts/", headers=headers)
-    
-    if res.status_code == 200:
-        receipts = res.json()
-        if not receipts:
-            st.info("No receipts found. Upload your first receipt in the tab above!")
+    try: 
+        res = requests.get(f"{API_URL}/receipts/", headers=headers,timeout=10)
+        
+        if res.status_code == 200:
+            receipts = res.json()
+            if receipts:
+                st.dataframe(receipts, use_container_width=True, hide_index=True)
+            else:
+                st.info("No receipts uploaded yet.")
         else:
-            for receipt in receipts:
-                merchant = receipt.get("merchant_name", "Unknown Merchant")
-                amount = float(receipt.get("total_amount", 0.0))
-                date_str = receipt.get("transaction_date", "N/A")[:10] if receipt.get("transaction_date") else "N/A"
-                
-                with st.expander(f"🧾 {merchant} — ${amount:,.2f}"):
-                    c1, c2, c3 = st.columns(3)
-                    c1.write(f"**Date:** {date_str}")
-                    c2.write(f"**Category:** {receipt.get('category', 'Uncategorized')}")
-                    c3.write(f"**Verified:** {'Yes ✅' if receipt.get('is_verified') else 'No ❌'}")
-    else:
-        st.error("Could not retrieve receipts from server.")
+            st.error(f"Failed to fetch receipts: {res.status_code}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Could not connect to backend server: {e}")

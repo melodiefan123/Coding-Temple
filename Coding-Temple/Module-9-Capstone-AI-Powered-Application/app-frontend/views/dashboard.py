@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
 import plotly.graph_objects as go
+import os 
 
-API_URL = "http://localhost:8000"
-
+API_URL = os.getenv("BACKEND_API_URL", "http://localhost:8000")
 st.set_page_config(page_title="LedgeAI - Dashboard", page_icon="📊", layout="wide")
 
 st.title("📊My Dashboard")
@@ -28,11 +28,25 @@ def fetch_budgets():
     except Exception:
         return []
 
+# Fetch total from invoices + additional income endpoints
+def get_total_combined_income():
+    try:
+        inv_res = requests.get(f"{API_URL}/invoices/", headers=headers, timeout=5)
+        inc_res = requests.get(f"{API_URL}/income/", headers=headers, timeout=5)
+        
+        invoices_sum = sum(i.get("amount", 0.0) for i in inv_res.json() if i.get("status") == "paid") if inv_res.status_code == 200 else 0.0
+        income_sum = sum(i.get("amount", 0.0) for i in inc_res.json()) if inc_res.status_code == 200 else 0.0
+        
+        return invoices_sum + income_sum
+    except Exception:
+        return 0.0
+
 budgets = fetch_budgets()
+combined_income = get_total_combined_income()
 
 # 3. Interactive Income & Expense Controls
 st.sidebar.header("💰 Financial Inputs")
-income = st.sidebar.number_input("Monthly Income ($)", min_value=0.0, value=5000.0, step=100.0)
+income = st.sidebar.number_input("Monthly Income ($)", min_value=0.0, value=max(combined_income, 5000.0), step=100.0)
 spent_so_far = st.sidebar.number_input("Spent So Far ($)", min_value=0.0, value=1800.0, step=50.0)
 
 # Calculate totals
@@ -125,18 +139,7 @@ else:
 
 # Inside pages/3_Dashboard.py:
 
-# Fetch total from invoices + additional income endpoints
-def get_total_combined_income():
-    try:
-        inv_res = requests.get(f"{API_URL}/invoices/", headers=headers, timeout=5)
-        inc_res = requests.get(f"{API_URL}/income/", headers=headers, timeout=5)
-        
-        invoices_sum = sum(i.get("amount", 0.0) for i in inv_res.json() if i.get("status") == "paid") if inv_res.status_code == 200 else 0.0
-        income_sum = sum(i.get("amount", 0.0) for i in inc_res.json()) if inc_res.status_code == 200 else 0.0
-        
-        return invoices_sum + income_sum
-    except Exception:
-        return 0.0
 
-# Auto-calculate income for gauge and donut charts
-income = get_total_combined_income()
+
+# # Auto-calculate income for gauge and donut charts
+# income = get_total_combined_income()
