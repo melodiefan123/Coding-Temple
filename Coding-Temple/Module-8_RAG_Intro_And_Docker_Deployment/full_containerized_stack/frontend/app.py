@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 import os
 
-API_URL = os.environ.get("API_URL", "<http://localhost:8000>")
+API_URL = os.environ.get("API_URL", "http://backend:8000")
 
 st.set_page_config(page_title="RAG Assistant", page_icon="🤖", layout="wide")
 
@@ -11,10 +11,10 @@ with st.sidebar:
     st.title("🤖 RAG Assistant")
     try:
         health = requests.get(f"{API_URL}/health", timeout=3).json()
-        st.success(f"API: Connected")
+        st.success("API: Connected")
         st.write(f"Ollama: {health.get('ollama', 'unknown')}")
         st.metric("Documents", health.get('documents', 0))
-    except:
+    except Exception:
         st.error("API not available")
 
     if st.button("🔄 Re-index Documents"):
@@ -22,7 +22,7 @@ with st.sidebar:
             r = requests.post(f"{API_URL}/ingest")
             st.success(r.json().get("message", "Done"))
             st.rerun()
-        except:
+        except Exception:
             st.error("Ingestion failed")
 
 # --- Chat Interface ---
