@@ -30,6 +30,12 @@ def health():
         "documents": collection.count()
     }
 
+@app.get("/stats")
+def stats():
+    return {
+        "document_count": collection.count()
+    }
+
 @app.get("/")
 def root():
     return {"message": "RAG API running in Docker", "model": MODEL}
