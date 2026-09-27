@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import chromadb
 import requests
+from config import settings
 
 app = FastAPI(title="RAG API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -12,7 +13,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"],
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 MODEL = os.environ.get("MODEL_NAME", "llama3.2:1b")
 
-client = chromadb.PersistentClient(path="/app/chroma_data")
+client = chromadb.PersistentClient(path=settings.CHROMA_PATH)
 collection = client.get_or_create_collection("documents")
 
 @app.get("/health")
