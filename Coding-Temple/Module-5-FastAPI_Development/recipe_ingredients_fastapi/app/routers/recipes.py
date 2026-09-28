@@ -7,7 +7,7 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 recipes_db: list[dict] = []
 next_recipe_id = 1
 
-@router.get("/", response_model=list[RecipeResponse])
+@router.get("", response_model=list[RecipeResponse])
 def list_recipes():
     return recipes_db
 
@@ -18,7 +18,7 @@ def get_recipe(recipe_id: int):
             return recipe
     raise HTTPException(status_code=404, detail="Recipe not found")
 
-@router.post("/", response_model=RecipeResponse, status_code=201)
+@router.post("", response_model=RecipeResponse, status_code=201)
 def create_recipe(recipe: RecipeCreate):
     global next_recipe_id
     new_recipe = {

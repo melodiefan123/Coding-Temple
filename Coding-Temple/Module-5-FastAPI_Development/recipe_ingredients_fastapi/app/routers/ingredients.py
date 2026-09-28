@@ -5,7 +5,7 @@ router = APIRouter(prefix="/ingredients", tags=["ingredients"])
 ingredients_db: list[dict] = []
 next_ingredient_id = 1
 
-@router.get("/", response_model=list[IngredientResponse])
+@router.get("", response_model=list[IngredientResponse])
 def list_ingredients():
     return ingredients_db
 
@@ -16,7 +16,7 @@ def get_ingredient(ingredient_id: int):
             return ingredient
     raise HTTPException(status_code=404, detail="Ingredient not found")
 
-@router.post("/", response_model=IngredientResponse, status_code=201)
+@router.post("", response_model=IngredientResponse, status_code=201)
 def create_ingredient(ingredient: IngredientCreate):
     global next_ingredient_id
     new_ingredient = {
