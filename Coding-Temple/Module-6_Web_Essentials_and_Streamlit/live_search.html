@@ -1,86 +1,151 @@
-<!-- When the page loads, fetch all users from https://jsonplaceholder.typicode.com/users (this returns 10 user objects)
-Display all users as cards showing: name, email, company name (found in user.company.name)
-Add a search input at the top of the page
-As the user types in the search box, filter the displayed cards in real time - matching against both name and email (case-insensitive)
-Show a result count below the search box: "Showing 3 of 10 users"
-Handle the loading state: show "Loading users..." while the fetch is in progress
-Handle errors: show an error message if the fetch fails
-
-
-Deliverable: A working live_search.html file that loads user data, displays it as cards, and filters live as the user types. -->
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Live Search</title>
-        <style>
-            body { font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 0 20px; align-items: center;}
-             button { padding: 2px; font-size: 1rem; cursor: pointer; margin-right: 8px; align-items: center;}
-             input{
-                padding: 3px;
-             }
-        </style>
-    </head>
-    <body>
-        <h1>Users Search</h1>
-        <input placeholder="Search a user's name"></input>
-        <p id="content"></p>
-        <p id="result"></p>
-        <script>
-            const content = document.querySelector("#content")
-            const result = document.querySelector('#result')
-            const searchInput = document.querySelector('input')
-            let allUsers = []
-            async function loadUser(id) {
-                // Show loading state
-                content.textContent = `Loading users...`;
-                try{
-                    const response = await fetch(`https://jsonplaceholder.typicode.com/users`);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                     const users = await response.json();
-                    allUsers = users
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Search</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
 
-                     content.innerHTML = allUsers.map(user => `
-                            <div class="card">
-                                <h3>${user.name}</h3>
-                                <p>${user.email}</p>
-                                <p>${user.company.name}</p>
-                            </div>
-                        `).join("");
-                    } catch(error){
-                    content.innerHTML = `<p class="error">Failed to load: ${error.message}</p>`;
-                    result.textContent ="Error occurred";
-                }finally{
-                    console.log(`Fetch attempy for user ${id} complete.`)
+        body { 
+            max-width: 650px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            background-color: #f9f9f9;
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 14px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus {
+            border-color: #0066cc;
+        }
+
+        #result {
+            margin-top: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .cards-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        .card h3 {
+            margin: 0 0 6px 0;
+            color: #111;
+            font-size: 1.1rem;
+        }
+
+        .card p {
+            margin: 4px 0;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .error {
+            color: #d9534f;
+            background-color: #fdf7f7;
+            border: 1px solid #f5c6cb;
+            padding: 12px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Users Search</h1>
+    <input type="text" placeholder="Search by user's name or email...">
+    <p id="result"></p>
+    <div id="content" class="cards-grid"></div>
+
+    <script>
+        const content = document.querySelector("#content");
+        const result = document.querySelector("#result");
+        const searchInput = document.querySelector("input");
+        
+        let allUsers = [];
+
+        // Fetches initial user data from API
+        async function loadUsers() {
+            content.textContent = "Loading users...";
+            result.textContent = "";
+
+            try {
+                const response = await fetch("https://jsonplaceholder.typicode.com/users");
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
+                
+                allUsers = await response.json();
+                
+                // Triggers filterUsers on load to set initial cards and result count
+                filterUsers();
+            } catch (error) {
+                content.innerHTML = `<p class="error">Failed to load: ${error.message}</p>`;
+                result.textContent = "Error occurred";
             }
-            function filterUsers() {
-                    const term = searchInput.value.toLowerCase();
-                    const filtered = allUsers.filter(user => 
-                        // what two things should you check here?
-                        user.name.toLowerCase().includes(term) || user.email.toLowerCase().includes(term)
-                    );
-                        content.innerHTML = filtered.map(user => `
-                            <div class="card">
-                                <h3>${user.name}</h3>
-                                <p>${user.email}</p>
-                                <p>${user.company.name}</p>
-                            </div>
-                        `).join("");
-                    result.textContent=`Showing ${filtered.length} of ${allUsers.length} Users`
+        }
 
-                }
+        // Dedicated render function to prevent code duplication
+        function renderUsers(users) {
+            if (users.length === 0) {
+                content.innerHTML = "<p>No users found matching your search.</p>";
+                return;
+            }
 
-                            
-            searchInput.addEventListener("input", () =>{
-                filterUsers()
-            })
+            content.innerHTML = users.map(user => `
+                <div class="card">
+                    <h3>${user.name}</h3>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Company:</strong> ${user.company.name}</p>
+                </div>
+            `).join("");
+        }
 
-            loadUser(1)
+        // Filters stored users array and updates counter
+        function filterUsers() {
+            const term = searchInput.value.trim().toLowerCase();
+            const filtered = allUsers.filter(user => 
+                user.name.toLowerCase().includes(term) || 
+                user.email.toLowerCase().includes(term)
+            );
 
-        </script>
-    </body>
+            renderUsers(filtered);
+            result.textContent = `Showing ${filtered.length} of ${allUsers.length} users`;
+        }
+
+        // Event Listeners
+        searchInput.addEventListener("input", filterUsers);
+
+        // Initial Load
+        loadUsers();
+    </script>
+</body>
 </html>
