@@ -6,8 +6,8 @@ class Note(Base):
     __tablename__ = "notes"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String(200), index=True)
-    content = Column(String)
+    title = Column(String(200), nullable=False, index=True)
+    content = Column(String, nullable=False)
     category = Column(String(50), index=True, nullable=True)
     is_pinned = Column(Boolean, default=False)
     created_at = Column(DateTime, server_default=func.now())

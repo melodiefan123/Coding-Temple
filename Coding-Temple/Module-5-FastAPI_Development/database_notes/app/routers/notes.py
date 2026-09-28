@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.note import Note 
@@ -8,7 +8,7 @@ from typing import Optional
 router = APIRouter(prefix="/notes", tags=["notes"])
 
 # POST /notes — Create a note (persists to database)
-@router.post("/", response_model=NoteResponse)
+@router.post("", response_model=NoteResponse, status_code=status.HTTP_201_CREATED)
 def create_note(note: NoteCreate, db: Session = Depends(get_db)):
     new_note = Note(
         title=note.title,
@@ -22,7 +22,7 @@ def create_note(note: NoteCreate, db: Session = Depends(get_db)):
     return new_note
 
 # GET /notes — List notes with optional category filter and is_pinned filter
-@router.get("/", response_model=list[NoteResponse])
+@router.get("", response_model=list[NoteResponse])
 def list_notes(
     category: Optional[str] = None,
     is_pinned: Optional[bool] = None,
