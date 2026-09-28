@@ -3,10 +3,10 @@ from typing import Optional
 from enum import Enum
 
 class Genre(str, Enum):
-    fiction = "Fiction"
-    nonfiction = "Non-Fiction"
-    science = "Science"
-    history = "History"
+    fiction = "fiction"
+    nonfiction = "nonfiction"
+    science = "science"
+    history = "history"
 
 
 class Book(BaseModel):
