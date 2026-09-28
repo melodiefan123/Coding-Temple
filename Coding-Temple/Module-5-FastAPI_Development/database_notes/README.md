@@ -14,7 +14,7 @@ A FastAPI application featuring persistent SQLite storage using SQLAlchemy model
 
 1. **Clone the repository and navigate to project root**:
    ```bash
-   cd notes-api
+   cd database_notes
    ```
 
 2. **Create and activate a virtual environment (optional but recommended)**:

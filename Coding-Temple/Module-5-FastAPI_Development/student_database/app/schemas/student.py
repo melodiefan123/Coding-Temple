@@ -1,37 +1,32 @@
-from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class StudentCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=200, description="name of the student")
-    email: str = Field(min_length=1, description="The email of the student")
-    grade_level: Optional[int] = Field(None, ge=1, le=12, description="The grade level of the student")
-    gpa: float = Field(0.0, description="The GPA of the student")
-    is_enrolled: bool = Field(True, description="Whether the student is currently enrolled")
+class StudentBase(BaseModel):
+    name: str
+    email: EmailStr
+    major: Optional[str] = None
+    gpa: Optional[float] = Field(default=None, ge=0.0, le=4.0)
 
-class StudentUpdate(BaseModel):
-    name: str = Field(min_length=1, max_length=200, description="name of the student")
-    email: str = Field(min_length=1, description="The email of the student")
-    grade_level: int = Field(ge=1, le=12, description="The grade level of the student")
-    gpa: Optional[float] = Field(None, description="The GPA of the student")
-    is_enrolled: bool = Field(True, description="Whether the student is currently enrolled")
+
+class StudentCreate(StudentBase):
+    pass
+
+
+class StudentUpdate(StudentBase):
+    # Full replacement requiring name and email, with optional major and gpa
+    pass
+
 
 class StudentPatch(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=200, description="name of the student")
-    email: Optional[str] = Field(None, min_length=1, description="The email of the student")
-    grade_level: Optional[int] = Field(None, ge=1, le=12, description="The grade level of the student")
-    gpa: Optional[float] = Field(None, description="The GPA of the student")
-    is_enrolled: Optional[bool] = Field(None, description="Whether the student is currently enrolled")
+    # All fields optional for partial updates
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    major: Optional[str] = None
+    gpa: Optional[float] = Field(default=None, ge=0.0, le=4.0)
 
-class StudentResponse(BaseModel):
+
+class StudentResponse(StudentBase):
     id: int
-    name: str
-    email: str
-    grade_level: Optional[int]
-    gpa: Optional[float]
-    is_enrolled: bool
-    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

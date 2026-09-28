@@ -1,14 +1,12 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Float, Integer, String
 from app.database import Base
+
 
 class Student(Base):
     __tablename__ = "students"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(200), index=True)
-    email = Column(String, unique=True, index=True)
-    grade_level = Column(Integer, index=True, nullable=True)
+    name = Column(String(200), nullable=False, index=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    major = Column(String, nullable=True, index=True)
     gpa = Column(Float, nullable=True)
-    is_enrolled = Column(Boolean, default=True)
-    created_at = Column(DateTime, server_default=func.now())
