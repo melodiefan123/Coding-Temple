@@ -28,13 +28,14 @@ def get_current_student(token: str = Depends(oauth2_scheme), db: Session = Depen
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         student_id: str = payload.get("sub")
-        if student_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        user = db.query(User).filter(User.id == int(student_id)).first()
-        if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    if student_id is None:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    user = db.query(User).filter(User.id == int(student_id)).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+
     return user
-    
-    

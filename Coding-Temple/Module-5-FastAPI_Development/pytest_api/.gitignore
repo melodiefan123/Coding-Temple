@@ -1,17 +1,15 @@
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environment variables
+# Environment & Secrets
 .env
 
-# Database and Testing
-*.db
+# Coverage & Testing
 .coverage
-.pytest_cache/
 htmlcov/
+.pytest_cache/
 
-# Virtual Environments
-venv/
-env/
-ENV/
+# Databases
+*.db
+*.sqlite3
+
+# Python bytecode
+__pycache__/
+*.pyc

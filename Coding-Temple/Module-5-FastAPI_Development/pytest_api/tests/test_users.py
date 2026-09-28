@@ -60,14 +60,13 @@ class TestCreateStudent:
         assert response.status_code == 422
 
     def test_invalid_email(self, client, auth_headers):
-        # Invalid email, valid grade_level (10)
-        response = client.post("/students/", headers=auth_headers, json={
-            "name": "student3",
-            "email": "invalid-email-format",
-            "grade_level": 10, 
-            "gpa": 3.2, 
+        response = client.post("/students/", json={
+            "name": "Valid Name",
+            "email": "not-a-valid-email",
+            "grade_level": 10,
             "is_enrolled": True
-        })
+        }, headers=auth_headers)
+        
         assert response.status_code == 422
 
 class TestReadStudents:
