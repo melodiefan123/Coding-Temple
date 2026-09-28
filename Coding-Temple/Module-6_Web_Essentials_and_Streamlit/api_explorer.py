@@ -7,16 +7,23 @@
 # Types (a Pokémon can have multiple types — look in the types field of the response)
 # Handle a 404 error gracefully: also try fetching a Pokémon that doesn't exist (e.g., "pikacu" - a common misspelling). Your code should check the status code and print a helpful error message instead of crashing.
 import requests
-import json
 
 
 def fetch_pokemon(name: str):
     response = requests.get(f"https://pokeapi.co/api/v2/pokemon/{name}")
+    print(f"--- {name} ---")
     if response.status_code==200:
-       result = response.json()
-       print(f"---{name}---\nHeight:{result['height']}\nWeight:{result['weight']}\nTypes:{','.join([item['type']['name'] for item in result['types']])}")
+        result = response.json()
+        types = [t["type"]["name"] for t in result["types"]]
+        types_str = ", ".join(types)
+
+        # Display details with proper spacing after colons
+        print(f"Height: {result['height']}")
+        print(f"Weight: {result['weight']}")
+        print(f"Types: {types_str}\n")
     else:
-        print(f"---{name}---\nError: Pokémon '{name}' not found (Status 404). Check your spelling!")
+        # Dynamically include response.status_code and add a trailing newline
+        print(f"Error: Pokémon '{name}' not found (Status {response.status_code}). Check your spelling!\n")
 
 
 fetch_pokemon("pikachu")
