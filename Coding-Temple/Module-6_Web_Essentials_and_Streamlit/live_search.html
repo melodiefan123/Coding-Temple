@@ -81,7 +81,7 @@
 </head>
 <body>
     <h1>Users Search</h1>
-    <input type="text" placeholder="Search by user's name or email...">
+    <input type="text" placeholder="Search by user's name or email..." />
     <p id="result"></p>
     <div id="content" class="cards-grid"></div>
 
@@ -92,7 +92,6 @@
         
         let allUsers = [];
 
-        // Fetches initial user data from API
         async function loadUsers() {
             content.textContent = "Loading users...";
             result.textContent = "";
@@ -104,8 +103,6 @@
                 }
                 
                 allUsers = await response.json();
-                
-                // Triggers filterUsers on load to set initial cards and result count
                 filterUsers();
             } catch (error) {
                 content.innerHTML = `<p class="error">Failed to load: ${error.message}</p>`;
@@ -113,7 +110,6 @@
             }
         }
 
-        // Dedicated render function to prevent code duplication
         function renderUsers(users) {
             if (users.length === 0) {
                 content.innerHTML = "<p>No users found matching your search.</p>";
@@ -129,7 +125,6 @@
             `).join("");
         }
 
-        // Filters stored users array and updates counter
         function filterUsers() {
             const term = searchInput.value.trim().toLowerCase();
             const filtered = allUsers.filter(user => 
@@ -141,10 +136,8 @@
             result.textContent = `Showing ${filtered.length} of ${allUsers.length} users`;
         }
 
-        // Event Listeners
         searchInput.addEventListener("input", filterUsers);
 
-        // Initial Load
         loadUsers();
     </script>
 </body>
