@@ -1,41 +1,30 @@
-# 5 hardcoded questions with multiple-choice answers (use topics from this course - HTML, CSS, JavaScript, Python, APIs)
-# Session state tracking:
-    # current_question (index of the current question)
-    # score (number of correct answers)
-    # answered (whether the current question has been answered)
-#Answer flow: When the user selects an answer and clicks Submit:
-    # Show whether they were correct or incorrect (using st.success() or st.error())
-    # Show the correct answer if they were wrong
-    # Show a "Next" button to advance
-#Progress indicator: "Question 2 of 5" and a progress bar
-#Results screen: After the last question, show the final score and a "Restart" button that resets all session state
-
 import streamlit as st
-import time 
+import time
 
-# st.set_page_config() with layout="wide" and a relevant title/icon
+# --- 1. Page Configuration ---
 st.set_page_config(
-    page_title="My Dashboard",      # Browser tab title
-    page_icon="📊",                 # Browser tab icon
-    layout="wide",                  # Use full browser width (default is "centered")
-    initial_sidebar_state="expanded" # Sidebar starts open
+    page_title="Web & API Fundamentals Quiz",
+    page_icon="🧠",
+    layout="centered"
 )
 
-#----Initialize Session State --- 
-if "current_question" not in st.session_state: 
-    st.session_state["current_question"] = 0 
+# --- 2. Session State Initialization ---
+if "current_question" not in st.session_state:
+    st.session_state["current_question"] = 0
 
-if "timer" not in st.session_state: 
-    st.session_state["timer"] = time.time()
+if "score" not in st.session_state:
+    st.session_state["score"] = 0
 
-if "score" not in st.session_state: 
-    st.session_state["score"] = 0 
-
-if "answered" not in st.session_state: 
+if "answered" not in st.session_state:
     st.session_state["answered"] = False
 
+if "selected_option" not in st.session_state:
+    st.session_state["selected_option"] = None
 
+if "question_start_time" not in st.session_state:
+    st.session_state["question_start_time"] = time.time()
 
+# --- 3. Questions Data ---
 questions = [
     {
         "question": "What does HTML stand for?",
@@ -59,52 +48,112 @@ questions = [
         "answer": 1
     },
     {
-        "question": "Which CSS property controls the space between elements?",
+        "question": "Which CSS property controls the space outside an element's border?",
         "options": ["padding", "margin", "border", "spacing"],
         "answer": 1
     },
 ]
 
-if st.session_state["current_question"] >= len(questions):
-    st.write(f"Final Score:{st.session_state['score']} ")
-    restart = st.button("Restart")
-    if restart: 
-        st.session_state["current_question"] = 0 
-        st.session_state["score"] = 0 
-        st.session_state['answered'] = False
-else: 
+total_questions = len(questions)
+time_limit = 15  # seconds per question
 
-    timer_placeholder = st.empty()
-    time_left = 15 - (time.time() - st.session_state["timer"])  
-    if time_left <=0:
-        st.session_state["current_question"] +=1
-        st.session_state["answered"] = False
-        st.session_state["timer"] = time.time()
-    else: 
-        timer_placeholder.write(f"⏰ Time remaining: **{int(time_left)}** seconds")
-        time.sleep(1)
-        st.rerun()
+# --- 4. Main App Layout ---
+st.title("🧠 Web & API Fundamentals Quiz")
+
+# State 1: Quiz Completed (Results Screen)
+if st.session_state["current_question"] >= total_questions:
+    st.balloons()
+    st.header("🎉 Quiz Complete!")
+    
+    score = st.session_state["score"]
+    percentage = (score / total_questions) * 100
+    
+    st.metric(label="Final Score", value=f"{score} / {total_questions}", delta=f"{percentage:.0f}%")
+    
+    # Custom feedback summary based on performance
+    if percentage == 100:
+        st.success("🌟 Perfect score! Exceptional job mastering these core web concepts.")
+    elif percentage >= 60:
+        st.info("👍 Solid effort! You have a good grasp of the foundational topics.")
+    else:
+        st.warning("📚 Keep practicing! Review the concepts and try again.")
         
-    q = questions[st.session_state["current_question"]]
+    if st.button("Restart Quiz", type="primary"):
+        st.session_state["current_question"] = 0
+        st.session_state["score"] = 0
+        st.session_state["answered"] = False
+        st.session_state["selected_option"] = None
+        st.session_state["question_start_time"] = time.time()
+        st.rerun()
 
-    with st.form("quiz_form", clear_on_submit=True):
-        title = st.write(q["question"])
-        options = st.selectbox("Options", q["options"])
-        submit = st.form_submit_button("Submit")
-        if submit: 
-            if q["options"][q["answer"]] == options:
+# State 2: Active Quiz Question
+else:
+    q_index = st.session_state["current_question"]
+    q = questions[q_index]
+
+    # --- Progress Indicator (Placed above the question for better UX) ---
+    st.caption(f"Question {q_index + 1} of {total_questions}")
+    st.progress((q_index + 1) / total_questions)
+
+    # --- Fragment-based Non-Blocking Live Countdown Timer ---
+    @st.fragment(run_every=1)
+    def render_timer():
+        if not st.session_state["answered"]:
+            elapsed = time.time() - st.session_state["question_start_time"]
+            remaining = int(time_limit - elapsed)
+
+            if remaining <= 0:
                 st.session_state["answered"] = True
-                st.session_state["score"] += 1
-                st.success("Correct! Move to the next question.")
+                st.session_state["selected_option"] = None
+                st.rerun(scope="app")
+            else:
+                st.write(f"⏰ **Time Remaining:** `{remaining}` seconds")
+        else:
+            st.write("⏱️ **Timer paused** (Question answered)")
+
+    render_timer()
+
+    # --- Question Display & Form ---
+    st.subheader(f"Q{q_index + 1}: {q['question']}")
+
+    # Form keeps option selection stable during fragment interval re-renders
+    with st.form(f"quiz_form_{q_index}"):
+        user_choice = st.radio(
+            "Select your answer:",
+            options=q["options"],
+            index=q["options"].index(st.session_state["selected_option"]) if st.session_state["selected_option"] in q["options"] else None,
+            disabled=st.session_state["answered"]
+        )
+        
+        submit_button = st.form_submit_button("Submit Answer", type="primary", disabled=st.session_state["answered"])
+
+        if submit_button and not st.session_state["answered"]:
+            if user_choice is None:
+                st.warning("Please select an answer before submitting.")
             else:
                 st.session_state["answered"] = True
-                st.error("Wrong answer.")
-                st.write(f"Correct answer is {q['options'][q['answer']]}")
-    next = st.button("Next")
-    if next and st.session_state['answered'] == True:
-        st.session_state["current_question"] += 1
-        st.session_state['answered'] = False
-        st.session_state['timer'] = time.time()
+                st.session_state["selected_option"] = user_choice
+                
+                correct_answer = q["options"][q["answer"]]
+                if user_choice == correct_answer:
+                    st.session_state["score"] += 1
+                st.rerun()
 
-    st.write(f"Question {st.session_state['current_question'] + 1} of {len(questions)}")
-    st.progress((st.session_state['current_question'] + 1)/len(questions))
+    # --- Feedback and Next Step ---
+    if st.session_state["answered"]:
+        correct_answer = q["options"][q["answer"]]
+        user_choice = st.session_state["selected_option"]
+
+        if user_choice is None:
+            st.error(f"⌛ **Time's up!** You didn't submit an answer in time. The correct answer was: **{correct_answer}**")
+        elif user_choice == correct_answer:
+            st.success("✅ **Correct!** Great job.")
+        else:
+            st.error(f"❌ **Incorrect.** The correct answer was: **{correct_answer}**")
+
+        if st.button("Next Question ➡️", type="primary"):
+            st.session_state["current_question"] += 1
+            st.session_state["answered"] = False
+            st.session_state["selected_option"] = None
+            st.session_state["question_start_time"] = time.time()
+            st.rerun()
