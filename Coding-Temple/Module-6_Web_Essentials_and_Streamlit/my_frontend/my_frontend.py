@@ -68,22 +68,35 @@ if stats == "unauthorized" or tasks_list == "unauthorized":
     st.session_state["token"] = None 
     st.rerun()
 
+
 # Metrics - Display at least 2 st.metric() cards (total tasks, completed tasks)
-col1, col2 = st.columns(2)
-col1.metric("Total", stats["total"])
-col2.metric("Completed", stats["done"])
+if stats is None: 
+    st.error("Failed to load statistics from the backend server.")
+else: 
+    col1, col2 = st.columns(2)
+    col1.metric("Total", stats.get("total", 0))
+    col2.metric("Completed", stats.get("done", 0))
 
 # Task list - Display all tasks with their status
 st.subheader("Tasks")
-if tasks_list:
+if tasks_list is None:
+    st.error("Failed to load task list from the backend server.")
+elif len(tasks_list)> 0: 
     for task in tasks_list:
         status = "✅" if task["done"] else "⬜"
         st.write(f"{status} {task['title']}")
+else:
+    st.info("No tasks yet")
 
 # Add task form - A form that POSTs a new task to the API
 with st.form("add_task", clear_on_submit=True): 
     new_title = st.text_input("New Task")
-    if st.form_submit_button("➕ Add Task") and new_title.strip(): 
-        api_post("/tasks", token, {"title": new_title.strip()})
-        st.rerun()
+    if st.form_submit_button("➕ Add Task"):
+        if new_title.strip(): 
+            success = api_post("/tasks", token, {"title": new_title.strip()})
+            if success: 
+                st.toast("Task added successfully!", icon="✅")
+                st.rerun()
+            else: 
+                st.error("Could not add task. Please try again.")
 
