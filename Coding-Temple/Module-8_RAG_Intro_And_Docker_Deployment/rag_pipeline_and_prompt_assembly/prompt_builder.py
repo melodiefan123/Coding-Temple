@@ -1,9 +1,10 @@
-# Takes a user question and a list of retrieved document chunks (simulated)
 import chromadb
 
+# Initialize local in-memory ChromaDB client
 client = chromadb.Client()
 collection = client.get_or_create_collection("course_docs")
 
+# Knowledge base setup
 documents = [
     "FastAPI uses Pydantic models for automatic request validation. "
     "Define a Pydantic class with field types and FastAPI validates "
@@ -36,46 +37,55 @@ sources = [
     "module7_chromadb.md", "module6_css.md", "module8_docker.md"
 ]
 
+# Add documents and metadata to vector database
 collection.add(
     documents=documents,
     metadatas=[{"source": s} for s in sources],
     ids=[f"doc_{i}" for i in range(len(documents))]
 )
-print(f"Knowledge base loaded: {collection.count()} document chunks\\n")
+print(f"Knowledge base loaded: {collection.count()} document chunks\n")
 
-# Assembles a complete RAG prompt with:
-# A system prompt instructing the model to answer from context only
-# The retrieved chunks formatted with source labels
-# The user’s question
-# Instructions to cite sources
-system_prompt = ("You are a helpful AI assistant for students learning AI engineering. "
-    "Answer the user's question based ONLY on the context provided below. "
-    "If the context doesn't contain enough information to answer, say so. "
-    "Always cite which source document your answer comes from. "
-    "Keep your response under 150 words.")
-def rag_prompt(question: str, chunks,system_prompt=system_prompt):
-    full_prompt = f""" SYSTEM: {system_prompt}
+DEFAULT_SYSTEM_PROMPT = (
+    "You are a helpful AI assistant for students learning AI engineering.\n"
+    "Answer the user's question based ONLY on the context provided below.\n"
+    "If the context doesn't contain enough information to answer, say so.\n"
+    "Always cite which source document your answer comes from.\n"
+    "Keep your response under 150 words."
+)
 
-    CONTEXT: {chunks}
-
-    USER QUESTION: {question}
-
-    ANSWER: """
-# Prints the assembled prompt and its token count estimate (characters / 4 as a rough approximation)
-    token_count = len(full_prompt)//4
-    print(f"Estimated token count: {token_count}")
+def rag_prompt(question: str, chunks: str, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> str:
+    """Assembles full RAG prompt and outputs estimated token length."""
+    full_prompt = (
+        f"SYSTEM:\n{system_prompt}\n\n"
+        f"CONTEXT:\n{chunks}\n\n"
+        f"USER QUESTION:\n{question}\n\n"
+        f"ANSWER:"
+    )
+    
+    # Estimate token count (~4 characters per token)
+    token_count = len(full_prompt) // 4
+    print(f"--- Prompt Assembled (Estimated Tokens: ~{token_count}) ---")
     return full_prompt
 
-# Tests with at least 2 different questions and different sets of "retrieved" chunks
+# Test with 2 different questions
+user_questions = [
+    "How do I protect my API endpoints so only logged-in users can access them?",
+    "How does Docker help with deployment?"
+]
 
-user_questions = ["How do I protect my API endpoints so only logged-in users can access them?", "How does Docker help with deployment?"]
-
-for user_question in user_questions:
+for i, user_question in enumerate(user_questions, 1):
     results = collection.query(
         query_texts=[user_question],
         n_results=3
     )
-    context = "\n\n".join([
-    f"[Source: {results['metadatas'][0][i]['source']}]\n{results['documents'][0][i]}" for i in range(len(results['documents'][0]))
-])
-    print(rag_prompt(user_question, chunks=context))
+    
+    # Format retrieved document chunks with metadata labels
+    formatted_chunks = "\n\n".join([
+        f"[Source: {results['metadatas'][0][j]['source']}]\n{results['documents'][0][j]}"
+        for j in range(len(results['documents'][0]))
+    ])
+    
+    print(f"================ TEST CASE {i} ================")
+    assembled_prompt = rag_prompt(user_question, chunks=formatted_chunks)
+    print(assembled_prompt)
+    print("\n" + "=" * 45 + "\n")
