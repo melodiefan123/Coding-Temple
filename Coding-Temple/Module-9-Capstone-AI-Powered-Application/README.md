@@ -42,39 +42,39 @@ An intelligent financial assistant and budget tracker that automates invoice gen
 
 All endpoints (except authentication) require a valid JSON Web Token (JWT) sent in the HTTP Request Authorization header: `Authorization: Bearer <JWT_TOKEN>`.
 
-| Method | Endpoint | Auth Required | Request Payload / Params | Response Summary |
-| :--- | :--- | :---: | :--- | :--- |
-| **POST** | `/auth/login` | ❌ No | Form Data: `username`, `password` | Returns `access_token` and token type. |
-| **POST** | `/auth/register` | ❌ No | JSON: `username`, `email`, `password` | Registers new user; returns confirmation or token. |
-| **GET** | `/budgets/` | 🔒 Yes | *None* | Fetches active user's budget allocations. |
-| **POST** | `/budgets` | 🔒 Yes | JSON: `category`, `monthly_limit` | Creates or updates budget allocation. |
-| **POST** | `/budgets/expenses` | 🔒 Yes | JSON: `description`, `category`, `amount`, `card_id` | Logs a new expense under a category/card. |
-| **GET** | `/income/` | 🔒 Yes | *None* | Fetches list of logged additional income items. |
-| **POST** | `/income/` | 🔒 Yes | JSON: `source`, `amount` | Logs an income or top-up transaction. |
-| **GET** | `/invoices/` | 🔒 Yes | *None* | Fetches all client invoices. |
-| **POST** | `/invoices/` | 🔒 Yes | JSON: `invoice_number`, `client_name`, `amount`, `status`, `issued_date`, `due_date`, `description` | Creates a new invoice record. |
-| **GET** | `/receipts/` | 🔒 Yes | *None* | Fetches processed receipt records. |
-| **POST** | `/receipts/upload` | 🔒 Yes | Multipart Form: `file`, `merchant_name`, `category`, `total_amount` | Uploads, parses, and indexes receipt into vector DB. |
-| **POST** | `/rag/index` | 🔒 Yes | Multipart Form: `file` | Indexes document into ChromaDB for vector search. |
-| **POST** | `/rag/query` | 🔒 Yes | JSON: `question` | Queries RAG pipeline and returns answer from context. |
+| Method   | Endpoint            | Auth Required | Request Payload / Params                                                                            | Response Summary                                      |
+| :------- | :------------------ | :-----------: | :-------------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
+| **POST** | `/auth/login`       |     ❌ No     | Form Data: `username`, `password`                                                                   | Returns `access_token` and token type.                |
+| **POST** | `/auth/register`    |     ❌ No     | JSON: `username`, `email`, `password`                                                               | Registers new user; returns confirmation or token.    |
+| **GET**  | `/budgets/`         |    🔒 Yes     | _None_                                                                                              | Fetches active user's budget allocations.             |
+| **POST** | `/budgets`          |    🔒 Yes     | JSON: `category`, `monthly_limit`                                                                   | Creates or updates budget allocation.                 |
+| **POST** | `/budgets/expenses` |    🔒 Yes     | JSON: `description`, `category`, `amount`, `card_id`                                                | Logs a new expense under a category/card.             |
+| **GET**  | `/income/`          |    🔒 Yes     | _None_                                                                                              | Fetches list of logged additional income items.       |
+| **POST** | `/income/`          |    🔒 Yes     | JSON: `source`, `amount`                                                                            | Logs an income or top-up transaction.                 |
+| **GET**  | `/invoices/`        |    🔒 Yes     | _None_                                                                                              | Fetches all client invoices.                          |
+| **POST** | `/invoices/`        |    🔒 Yes     | JSON: `invoice_number`, `client_name`, `amount`, `status`, `issued_date`, `due_date`, `description` | Creates a new invoice record.                         |
+| **GET**  | `/receipts/`        |    🔒 Yes     | _None_                                                                                              | Fetches processed receipt records.                    |
+| **POST** | `/receipts/upload`  |    🔒 Yes     | Multipart Form: `file`, `merchant_name`, `category`, `total_amount`                                 | Uploads, parses, and indexes receipt into vector DB.  |
+| **POST** | `/rag/index`        |    🔒 Yes     | Multipart Form: `file`                                                                              | Indexes document into ChromaDB for vector search.     |
+| **POST** | `/rag/query`        |    🔒 Yes     | JSON: `question`                                                                                    | Queries RAG pipeline and returns answer from context. |
 
 ## 3. System Architecture Diagram
 
-````ascii
-                             +-------------------+
-                             |   Client / Web    |
-                             |  (React/Next.js)  |
+```ascii
+                            +-------------------+
+                             | Streamlit Frontend|
+                             |    (Port 8501)    |
                              +---------+---------+
                                        |
-                                HTTP / REST
+                                HTTP / REST (JWT)
                                        |
                                        v
 +-------------------------------------------------------------------------------+
-| FastAPI Application                                                           |
+| FastAPI Application (Port 8000)                                              |
 |                                                                               |
 |  +--------------------+  +----------------------+  +-----------------------+  |
-|  |    Auth Router     |  |   Statement Router   |  |    Expense Router     |  |
-|  | (/auth/token)      |  | (/statement/upload)  |  | (/expenses/...)       |  |
+|  |    Auth Router     |  |   Statement Router   |  |     Budget Router     |  |
+|  | (/auth/login)      |  | (/statements/upload) |  | (/budgets/...)        |  |
 |  +---------+----------+  +----------+-----------+  +-----------+-----------+  |
 |            |                        |                      |                  |
 |            +------------------------+----------------------+                  |
@@ -94,56 +94,57 @@ All endpoints (except authentication) require a valid JSON Web Token (JWT) sent 
         |  SQLite Database  |                   | Local VectorStore |           |
         |    (ledgeai.db)   |                   |     (ChromaDB)    |           |
         +-------------------+                   +-------------------+           |
-````
+```
+
 ## 4. Entity-Relationship (ER) Diagram
 
 Table users {
-  id integer [primary key]
-  email varchar [unique, not null]
-  hashed_password varchar [not null]
-  created_at timestamp [default: `now()`]
+id integer [primary key]
+email varchar [unique, not null]
+hashed_password varchar [not null]
+created_at timestamp [default: `now()`]
 }
 
 Table statements {
-  id integer [primary key]
-  user_id integer [not null, ref: > users.id]
-  filename varchar [not null]
-  file_type varchar [not null]
-  uploaded_at timestamp [default: `now()`]
+id integer [primary key]
+user_id integer [not null, ref: > users.id]
+filename varchar [not null]
+file_type varchar [not null]
+uploaded_at timestamp [default: `now()`]
 }
 
 Table invoices {
-  id integer [primary key]
-  user_id integer [not null, ref: > users.id]
-  statement_id integer [nullable, ref: > statements.id]
-  client_name varchar [not null]
-  amount float [not null]
-  due_date date [not null]
-  status varchar [default: 'pending']
-  created_at timestamp [default: `now()`]
+id integer [primary key]
+user_id integer [not null, ref: > users.id]
+statement_id integer [nullable, ref: > statements.id]
+client_name varchar [not null]
+amount float [not null]
+due_date date [not null]
+status varchar [default: 'pending']
+created_at timestamp [default: `now()`]
 }
 
 Table receipts {
-  id integer [primary key]
-  user_id integer [not null, ref: > users.id]
-  statement_id integer [nullable, ref: > statements.id]
-  merchant varchar [not null]
-  amount float [not null]
-  category varchar [not null]
-  purchase_date date [not null]
-  chroma_doc_id varchar [nullable]
-  created_at timestamp [default: `now()`]
+id integer [primary key]
+user_id integer [not null, ref: > users.id]
+statement_id integer [nullable, ref: > statements.id]
+merchant varchar [not null]
+amount float [not null]
+category varchar [not null]
+purchase_date date [not null]
+chroma_doc_id varchar [nullable]
+created_at timestamp [default: `now()`]
 }
 
 Table expenses {
-  id integer [primary key]
-  user_id integer [not null, ref: > users.id]
-  card_id integer [nullable]
-  amount float [not null]
-  description varchar [not null]
-  category varchar [not null]
-  date date [not null]
-  created_at timestamp [default: `now()`]
+id integer [primary key]
+user_id integer [not null, ref: > users.id]
+card_id integer [nullable]
+amount float [not null]
+description varchar [not null]
+category varchar [not null]
+date date [not null]
+created_at timestamp [default: `now()`]
 }
 
 # LedgeAI: Quick Start Guide
@@ -156,11 +157,11 @@ This guide gets you up and running with LedgeAI—both locally or inside Docker 
 
 Before starting, ensure you have the following installed on your host machine:
 
-* **Python 3.11+**
+- **Python 3.11+**
 
-* **Docker & Docker Compose** (if using containerized setup)
+- **Docker & Docker Compose** (if using containerized setup)
 
-* **Ollama** (for local AI models)
+- **Ollama** (for local AI models)
 
 ---
 
@@ -178,4 +179,4 @@ OLLAMA_HOST=http://localhost:11434
 
 BACKEND_API_URL=http://localhost:8000
 
-````
+```
