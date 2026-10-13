@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.auth_schema import RegisterRequest, LoginRequest, TokenResponse, UserResponse
 from app.utils.security import hash_password, verify_password, create_access_token, get_current_user
-from app.utils.exceptions import DuplicateException, BadRequestException
+from app.utils.exceptions import DuplicateException, UnauthorizedException
 
 router = APIRouter(tags=["auth"])
 
@@ -29,7 +29,8 @@ def register(user_data: RegisterRequest, db: Session = Depends(get_db)):
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user or not verify_password(credentials.password, user.hashed_password):
-        raise BadRequestException(detail="Invalid email or password")
+        # 401 Unauthorized for invalid login credentials
+        raise UnauthorizedException(detail="Invalid email or password")
     
     access_token = create_access_token(data={"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
