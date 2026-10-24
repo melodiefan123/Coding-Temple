@@ -1,0 +1,2 @@
+[2026-10-24 14:05:39] User ID: 2 - Action: Created student with ID 1
+[2026-10-24 14:07:07] User ID: 2 - Action: Deleted student with ID 1

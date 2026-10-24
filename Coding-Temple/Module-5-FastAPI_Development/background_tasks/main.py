@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from app.routers.students import router as students_router
 from app.routers.auth import router as auth_router
+from app.routers.reports import router as reports_router
 from app.database import Base, engine
 from app.utils.exceptions import AppException
 
@@ -39,6 +40,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 app.include_router(auth_router)
 app.include_router(students_router)
+app.include_router(reports_router, prefix="/reports")
 
 @app.get("/")
 def root(): 
