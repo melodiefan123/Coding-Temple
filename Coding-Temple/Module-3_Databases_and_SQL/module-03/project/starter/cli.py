@@ -1,6 +1,6 @@
 """
 Module 3 Project: Library Management System
-cli.py — Command-line interface
+cli.py — Command-line interface with enhanced error handling and docstrings
 """
 
 from library_system import (
@@ -11,7 +11,8 @@ from library_system import (
     delete_member, list_member_borrowings, engine, Session, Author
 )
 
-def menu_add_book():
+def menu_add_book() -> None:
+    """Prompt user for book details and add a new book to the database."""
     title = input("Please enter the title: ").strip()
     isbn = input("Please enter the ISBN: ").strip()
     author_name = input("Please enter the author's name: ").strip()
@@ -39,7 +40,8 @@ def menu_add_book():
     except Exception as e:
         print(f"Failed to add book: {e}")
 
-def menu_list_all_books():
+def menu_list_all_books() -> None:
+    """Display all books currently in the library system."""
     books = get_all_books()
     if not books: 
         print("No books in the library system.")
@@ -49,7 +51,8 @@ def menu_list_all_books():
             authors = ", ".join([a.name for a in b.author]) if b.author else "Unknown"
             print(f"ID {b.id}: '{b.title}' by {authors} (ISBN: {b.isbn}, Copies: {b.available_copies})")
 
-def menu_add_borrower():
+def menu_add_borrower() -> None:
+    """Prompt user for member details and register a new borrower[cite: 1, 2]."""
     name = input("Please enter your name: ").strip()
     email = input("Please enter your email address: ").strip()
     phone = input("Please enter your phone: ").strip()
@@ -60,7 +63,8 @@ def menu_add_borrower():
     except Exception as e:
         print(f"Failed to add member: {e}")
 
-def menu_checkout():
+def menu_checkout() -> None:
+    """Handle checking out an available book to a member[cite: 1, 2]."""
     available_books = get_available_books()
     if not available_books:
         print("No books are currently available for checkout.")
@@ -78,7 +82,8 @@ def menu_checkout():
     except ValueError as e: 
         print(f"Checkout failed: {e}")
 
-def menu_return():
+def menu_return() -> None:
+    """Process a book return using its checkout ID[cite: 1, 2]."""
     try:
         checkout_id = int(input("Please enter the checkout ID: "))
         results = return_book(checkout_id=checkout_id)
@@ -86,7 +91,8 @@ def menu_return():
     except (ValueError, Exception) as e:
         print(f"Error returning book: {e}")
 
-def menu_search_by_title():
+def menu_search_by_title() -> None:
+    """Search and display books matching a keyword in their title[cite: 1, 2]."""
     title_search = input("Please enter a title to search for: ").strip()
     results = search_books_by_title(title_search)
     if not results: 
@@ -95,7 +101,8 @@ def menu_search_by_title():
         for book in results: 
             print(f"- ID {book.id}: {book.title}")
 
-def menu_member_borrowings():
+def menu_member_borrowings() -> None:
+    """List all active, unreturned borrowings for a given member ID[cite: 1, 2]."""
     try: 
         member_id = int(input("Please enter the member ID: "))
     except ValueError: 
@@ -110,39 +117,37 @@ def menu_member_borrowings():
             book_title = result.books.title if result.books else f"Book ID {result.book_id}"
             print(f"Checkout ID: {result.id} | Book: {book_title} | Due date: {result.due_date}")
 
-def menu_update_member_email(): 
+def menu_update_member_email() -> None:
+    """Update a member's email address by member ID[cite: 1, 2]."""
     try: 
         member_id = int(input("Enter Member ID: "))
         new_email = input("Enter new email: ").strip()
         updated = update_member_email(member_id, new_email)
         if updated:
             print(f"Updated email for {updated.name}: {updated.email}")
-        else:
-            print("Member not found.")
     except ValueError as e: 
         print(f"Update failed: {e}")
 
-def menu_delete_book(): 
+def menu_delete_book() -> None:
+    """Delete a book from the system if no active checkouts exist[cite: 1, 2]."""
     try: 
         book_id = int(input("Enter Book ID to delete: "))
         if delete_book(book_id):
             print("Book deleted successfully.")
-        else: 
-            print("Could not delete book (active checkout exists or invalid ID).")
-    except ValueError: 
-        print("Invalid ID.")
+    except ValueError as e: 
+        print(f"Could not delete book: {e}")
 
-def menu_delete_member():
+def menu_delete_member() -> None:
+    """Delete a member from the system if no active borrowings exist[cite: 1, 2]."""
     try:
         member_id = int(input("Enter Member ID to delete: "))
         if delete_member(member_id):
             print("Member deleted successfully.")
-        else:
-            print("Could not delete member (active checkout exists or invalid ID).")
-    except ValueError: 
-        print("Invalid ID.")
+    except ValueError as e:
+        print(f"Could not delete member: {e}")
 
-def menu_search_by_author():
+def menu_search_by_author() -> None:
+    """Search books written by a specific author name[cite: 1, 2]."""
     author_name = input("Please enter the author's name: ").strip()
     results = find_books_by_author(author_name=author_name)
     if not results: 
@@ -151,7 +156,8 @@ def menu_search_by_author():
         for book in results: 
             print(f"- ID {book.id}: {book.title}")
 
-def menu_overdue():
+def menu_overdue() -> None:
+    """Display all currently overdue book checkouts[cite: 1, 2]."""
     results = get_overdue_books()
     if not results: 
         print("No books are currently overdue.")
@@ -161,7 +167,8 @@ def menu_overdue():
             member_name = result.members.name if result.members else f"Member ID {result.member_id}"
             print(f"Checkout ID: {result.id} | Book: {book_title} | Borrowed by: {member_name} | Due: {result.due_date}")
 
-def menu_popular_genres():
+def menu_popular_genres() -> None:
+    """Display top popular genres based on borrowing history[cite: 1, 2]."""
     results = get_popular_genres()
     if not results: 
         print("No genre statistics available yet.")
@@ -169,7 +176,8 @@ def menu_popular_genres():
         for genre in results: 
             print(f"Genre: {genre['name']} ({genre['count']} checkouts)")
 
-def main():
+def main() -> None:
+    """Main execution loop for the Library Management System command-line interface[cite: 1, 2]."""
     init_db()
 
     while True:
