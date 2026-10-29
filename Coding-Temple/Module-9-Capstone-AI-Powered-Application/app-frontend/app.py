@@ -57,10 +57,9 @@ st.markdown("""
     div[data-baseweb="base-input"] input,
     .stTextInput input,
     .stNumberInput input {
+        background-color: #1f242d !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
-        background-color: transparent !important;
-        caret-color: #FFFFFF !important;
     }
 
     div[data-baseweb="input"] input::placeholder,
@@ -865,8 +864,61 @@ with tab_statements:
                             st.error(f"Connection error: {sync_err}")
             else:
                 st.info("Upload a statement on the left to preview extracted transactions here.")
-                
+            
+        st.markdown("<div style='margin-top: 24px;'></div>", unsafe_allow_html=True)
+        # --- 3. AI CHATBOT (RAG) SECTION ---
+    with st.container(border=True):
+        st.markdown("<h4 style='margin:0; font-weight:600; color:#ffffff;'>💬 Financial AI Assistant (RAG Chat)</h4>", unsafe_allow_html=True)
+        st.caption("Ask questions about your uploaded documents, spending breakdown, or invoices.")
 
+        # Document upload for RAG indexing
+        rag_file = st.file_uploader("Upload Receipt / PDF for Vector Indexing", type=["pdf", "png", "jpg", "txt"], key="rag_doc_upload")
+        if rag_file and st.button("Index Document into ChromaDB"):
+            files = {"file": (rag_file.name, rag_file.getvalue(), rag_file.type)}
+            try:
+                res = requests.post(f"{API_URL}/rag/index", headers=headers, files=files, timeout=30)
+                if res.status_code == 200:
+                    st.success("Document successfully vectorized and indexed!")
+                else:
+                    st.error("Failed to index document.")
+            except Exception as e:
+                st.error(f"Connection error: {e}")
+
+        st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
+
+        # Chat interface state
+        if "messages" not in st.session_state:
+            st.session_state.messages = []
+
+        # Display message history
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    # Chat input box
+        if prompt := st.chat_input("Ask something about your expenses, receipts, or invoices..."):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Analyzing documents via RAG..."):
+                    try:
+                        res = requests.post(
+                            f"{API_URL}/rag/query",
+                            headers=headers,
+                            json={"question": prompt},
+                            timeout=30
+                        )
+                        if res.status_code == 200:
+                            answer = res.json().get("answer", "No answer returned.")
+                        else:
+                            answer = f"Error from AI backend: {res.text}"
+                    except Exception as e:
+                        answer = f"Could not connect to AI backend: {e}"
+
+                    st.markdown(answer)
+                    st.session_state.messages.append({"role": "assistant", "content": answer})
             
 
 
