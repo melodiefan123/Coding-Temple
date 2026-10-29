@@ -16,8 +16,6 @@ from search import search
 
 
 # Define your evaluation set here.
-# Each entry needs a query and the source filenames you expect to be relevant.
-# Use at least 5 queries for the chunking experiment.
 EVAL_SET = [
     {"query": "How do you create a FastAPI route?",
      "relevant_sources": ["fastapi.txt"]},
@@ -59,7 +57,8 @@ def evaluate(n_results: int = 5, distance_threshold: float = None):
     for item in EVAL_SET:
         query = item["query"]
         relevant = set(item["relevant_sources"])
-        sources = search(query, n_results, distance_threshold)
+        # Fix: explicitly use keyword arguments so distance_threshold isn't misrouted
+        sources = search(query, n_results=n_results, distance_threshold=distance_threshold)
         retrieved_sources = [result["source"] for result in sources]
         precision, recall = precision_recall(retrieved_sources, relevant)
         total_precision += precision

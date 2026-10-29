@@ -39,10 +39,11 @@ def chunk_text(text: str, chunk_size: int, overlap: int) -> list[str]:
         raise ValueError("Chunk Size must be greater than 0")
     if overlap < 0: 
         raise ValueError("Overlap must be non-negative")
-    chunks = [] 
-    start = 0 
     if overlap >= chunk_size:
         raise ValueError("overlap must be smaller than chunk_size")
+        
+    chunks = [] 
+    start = 0 
     
     while start < len(text):
         end = start + chunk_size
@@ -61,7 +62,6 @@ def load_documents(docs_dir: Path) -> list[dict]:
         List of dicts: {"filename": str, "text": str}
     """
     documents = []
-    
     for filename in docs_dir.glob("*"):
         if filename.suffix in [".txt", ".md"]:
             with open(filename, "r", encoding='utf-8') as f: 
@@ -71,7 +71,7 @@ def load_documents(docs_dir: Path) -> list[dict]:
             documents.append({
                 "filename": filename.name, 
                 "text": content,
-                })
+            })
     return documents
 
 
@@ -88,28 +88,42 @@ def ingest(chunk_size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP)
     """
     Full ingestion pipeline: load → chunk → embed → upsert.
 
-    Each chunk is stored with metadata: source filename, chunk index,
-    and the chunk size used — so experiments with different sizes can
-    be compared without ambiguity.
+    Clears the existing collection first to ensure experiments are independent
+    and results are not contaminated by leftover data from previous chunk sizes.
     """
+    client = chromadb.PersistentClient(path=CHROMA_PATH)
+    try:
+        client.delete_collection(COLLECTION_NAME)
+    except Exception:
+        pass
+    collection = client.create_collection(name=COLLECTION_NAME)
+
     model = SentenceTransformer(MODEL_NAME)
     documents = load_documents(DOCS_DIR)
-    collection = get_collection(CHROMA_PATH, COLLECTION_NAME)
+    
     all_chunks = []
     all_metadatas = []
     all_ids = []
+    
     for doc in documents: 
-        chunks = chunk_text(doc["text"],chunk_size, overlap)
+        chunks = chunk_text(doc["text"], chunk_size, overlap)
         for i, chunk in enumerate(chunks):
             all_chunks.append(chunk)
-            all_metadatas.append({"filename": doc["filename"], "chunk_index": i, "chunk_size": chunk_size, "overlap": overlap})
+            all_metadatas.append({
+                "filename": doc["filename"], 
+                "chunk_index": i, 
+                "chunk_size": chunk_size, 
+                "overlap": overlap
+            })
             all_ids.append(f"{doc['filename']}_{chunk_size}_{overlap}_{i}")
-    embeddings = model.encode(all_chunks)
-    collection.upsert(
-        documents = all_chunks, 
-        embeddings=embeddings,
-        metadatas= all_metadatas, 
-        ids = all_ids,
+            
+    if all_chunks:
+        embeddings = model.encode(all_chunks)
+        collection.upsert(
+            documents=all_chunks, 
+            embeddings=embeddings,
+            metadatas=all_metadatas, 
+            ids=all_ids,
         )
 
 if __name__ == "__main__":

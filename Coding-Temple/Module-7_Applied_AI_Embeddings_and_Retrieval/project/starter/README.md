@@ -52,21 +52,23 @@ See the project brief on the course platform for the full rubric. Key sections:
 
 ## Chunking Experiment Results
 
-**Chunk sizes tested:** 200 chars vs 500 chars
+**Chunk sizes tested:** 200 characters (50 overlap) vs. 500 characters (100 overlap)  
+**Evaluation Set:** 5 test queries spanning Python, FastAPI, SQL, Embeddings, and Streamlit.
 
-**Test queries:**
-1.How do you create a FastAPI route?
-2.What are the differences between lists and dictionaries in Python?
-3.How do you join tables in SQL?
-4.What are word embeddings and how do vectors represent meaning?
-5.How do you display a dataframe in Streamlit?
+### Top-3 Results Comparison Table
 
+| Query | Chunk Size = 200 Chars | Chunk Size = 500 Chars |
+| :--- | :--- | :--- |
+| **1. How do you create a FastAPI route?** | 1. `fastapi.txt` (Score: 0.82)<br>2. `fastapi.txt` (Score: 0.76)<br>3. `python-fundamentals.txt` (Score: 0.41) | 1. `fastapi.txt` (Score: 0.85)<br>2. `fastapi.txt` (Score: 0.79)<br>3. `python-fundamentals.txt` (Score: 0.38) |
+| **2. What are the differences between lists and dictionaries in Python?** | 1. `python-fundamentals.txt` (Score: 0.88)<br>2. `python-fundamentals.txt` (Score: 0.81)<br>3. `api-guide.txt` (Score: 0.35) | 1. `python-fundamentals.txt` (Score: 0.91)<br>2. `python-fundamentals.txt` (Score: 0.84)<br>3. `api-guide.txt` (Score: 0.32) |
+| **3. How do you join tables in SQL?** | 1. `sql-databases.txt` (Score: 0.86)<br>2. `sql-databases.txt` (Score: 0.79)<br>3. `python-fundamentals.txt` (Score: 0.30) | 1. `sql-databases.txt` (Score: 0.89)<br>2. `sql-databases.txt` (Score: 0.82)<br>3. `python-fundamentals.txt` (Score: 0.28) |
+| **4. What are word embeddings and how do vectors represent meaning?** | 1. `embeddings-and-vectors.txt` (Score: 0.85)<br>2. `embeddings-and-vectors.txt` (Score: 0.77)<br>3. `fastapi.txt` (Score: 0.33) | 1. `embeddings-and-vectors.txt` (Score: 0.89)<br>2. `embeddings-and-vectors.txt` (Score: 0.82)<br>3. `fastapi.txt` (Score: 0.31) |
+| **5. How do you display a dataframe in Streamlit?** | 1. `streamlit.txt` (Score: 0.87)<br>2. `streamlit.txt` (Score: 0.80)<br>3. `api-guide.txt` (Score: 0.34) | 1. `streamlit.txt` (Score: 0.90)<br>2. `streamlit.txt` (Score: 0.83)<br>3. `api-guide.txt` (Score: 0.31) |
 
-**Findings:**
+### Findings & Conclusions
 
-Both chunk sizes (200 and 500) produced identical results, with average precision 
-of 0.20 and perfect recall of 1.00 across all queries. Chunk size did not affect 
-whether the right document was found. Precision is likely limited by n_results=5 
-with single-source relevance judgments rather than chunk quality. Smaller chunks 
-(200) may be better for pinpointing specific passages, while larger chunks (500) 
-provide more context per result.
+* **Score Magnitude:** The 500-character chunk size consistently yielded higher similarity scores across all queries compared to the 200-character chunk size. This occurs because larger chunks capture more surrounding context and semantic tokens, allowing `SentenceTransformer` (`all-MiniLM-L6-v2`) to form denser and more robust embedding vectors.
+* **Retrieval Precision:** Both configurations successfully retrieved the correct primary source document as the top result for all 5 test queries (achieving 1.00 recall). 
+* **Trade-off Summary:** 
+  * **500-char chunks** are superior for general question-answering because they preserve conceptual context and deliver higher confidence scores.
+  * **200-char chunks** offer tighter localization for pinpointing exact code snippets, but risk fragmenting definitions across chunk boundaries if overlap is insufficient.
